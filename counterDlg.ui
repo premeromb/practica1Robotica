@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>506</width>
-    <height>317</height>
+    <width>741</width>
+    <height>372</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,10 +16,10 @@
   <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>1</x>
-     <y>11</y>
-     <width>501</width>
-     <height>301</height>
+     <x>3</x>
+     <y>13</y>
+     <width>721</width>
+     <height>351</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout_2">
@@ -50,7 +50,7 @@
     <item row="1" column="0">
      <widget class="QPushButton" name="periodButton">
       <property name="text">
-       <string>Time since last stop</string>
+       <string>Time since last stop (ms)</string>
       </property>
      </widget>
     </item>
