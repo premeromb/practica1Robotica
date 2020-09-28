@@ -40,7 +40,7 @@ void ejemplo1::doPeriodButton() {
 }
 
 void ejemplo1::changeIncrement(int value) {
-    mytimer.setPeriod(value * 1000);
+    increment = value;
     qDebug() << "   increment changed to " << increment;
 }
 
