@@ -1,0 +1,15 @@
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/CMakeFiles/install/strip.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/CMakeFiles/install/local.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/CMakeFiles/install.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/CMakeFiles/list_install_components.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/CMakeFiles/rebuild_cache.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/CMakeFiles/edit_cache.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/src/CMakeFiles/install/strip.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/src/CMakeFiles/install/local.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/src/CMakeFiles/edit_cache.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/src/CMakeFiles/MyFirstComp.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/src/CMakeFiles/install.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/src/CMakeFiles/list_install_components.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/src/CMakeFiles/rebuild_cache.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/src/CMakeFiles/ICES__home_salabeta_robocomp_components_promeromb_practica1Robotica_chocachoca_src.dir
+/home/salabeta/robocomp/components/promeromb/practica1Robotica/chocachoca/src/CMakeFiles/MyFirstComp_autogen.dir
