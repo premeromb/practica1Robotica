@@ -72,16 +72,16 @@ void SpecificWorker::initialize(int period)
 void SpecificWorker::compute( )
 {
     const float threshold = 200; // millimeters
-    float rot = 0.6;  // rads per second
+    float rot = 2;  // rads per second
 
     try
     {
     	// read laser data 
-        RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData(); 
+        RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData(); 		
 	//sort laser data from small to large distances using a lambda function.
-        std::sort( ldata.begin(), ldata.end(), [](RoboCompLaser::TData a, RoboCompLaser::TData b){ return     a.dist < b.dist; });  
-        
-	if( ldata.front().dist < threshold)
+        std::sort( ldata.begin(), ldata.end(), [](RoboCompLaser::TData a, RoboCompLaser::TData b){ return     a.dist < b.dist; });  	
+		
+	if( ldata.front().dist < threshold)			//si menor 
 	{
 		std::cout << ldata.front().dist << std::endl;
  		differentialrobot_proxy->setSpeedBase(5, rot);
@@ -89,7 +89,7 @@ void SpecificWorker::compute( )
 	}
 	else
 	{
-		differentialrobot_proxy->setSpeedBase(200, 0); 
+		differentialrobot_proxy->setSpeedBase(1000, 0); //cambiado de 200 a 1000 segun enunciado
   	}
     }
     catch(const Ice::Exception &ex)
