@@ -48,6 +48,10 @@ private:
 	std::shared_ptr < InnerModel > innerModel;
 	bool startup_check_flag;
 
+    enum class state {AVANZA, SPIRAL, BORDER};
+    state currentState = state::AVANZA;
+
+
 
 	bool doSpiral;
     int ticksNoColision;        // Before start spiral logic
