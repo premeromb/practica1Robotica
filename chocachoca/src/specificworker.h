@@ -48,17 +48,24 @@ private:
 	std::shared_ptr < InnerModel > innerModel;
 	bool startup_check_flag;
 
-    enum class state {AVANZA, SPIRAL, BORDER};
-    state currentState = state::AVANZA;
+    enum class state {AVANZA, SPIRAL, WALLS};
+    state currentState = state::WALLS; //TODO Al init
 
+	void spiral(RoboCompLaser::TLaserData ldata, float threshold, float rot, int speedBase);
 
+	void walls(RoboCompLaser::TLaserData ldata, float threshold, float rot, int speedBase);
 
 	bool doSpiral;
-    int ticksNoColision;        // Before start spiral logic
+    int spiralTicksNoColision;        // Before start spiral logic
+    int wallsTicksNoColision;
+    bool wallInit;
+    bool wallSecondTurn;
+
     int sideTicks;              // numero de ticks inicilaes por cada lado de la espiral
     int currentSideTicks;       // numero de tics para el lado actual
 
     int currentTraveledTicks;
+
 
     int contSideSpiral;         // cuneta los lados recorridos de la espiral // NO SE UASAAAAAAAAAAAAAAAAAAAAAAAA
     int contTurn;                   // cuenta los giros de 90º
