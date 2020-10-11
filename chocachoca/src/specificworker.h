@@ -30,6 +30,10 @@
 #include <genericworker.h>
 #include <innermodel/innermodel.h>
 
+const float threshold = 200;    // millimeters
+const float rot = 2;            // rads per second
+const int speedBase = 1000;     //1000 mm/s
+
 class SpecificWorker : public GenericWorker
 {
 Q_OBJECT
@@ -48,17 +52,19 @@ private:
 	std::shared_ptr < InnerModel > innerModel;
 	bool startup_check_flag;
 
-    enum class state {AVANZA, SPIRAL, WALLS};
+    enum class state {CHOCACHOCA, SPIRAL, WALLS};
     state currentState = state::WALLS; //TODO Al init
 
-	void spiral(RoboCompLaser::TLaserData ldata, float threshold, float rot, int speedBase);
+	void spiral(RoboCompLaser::TLaserData ldata);
 
-	void walls(RoboCompLaser::TLaserData ldata, float threshold, float rot, int speedBase);
+	void walls(RoboCompLaser::TLaserData ldata);
 
-	bool doSpiral;
+	void chocachoca(RoboCompLaser::TLaserData ldata);
+
+
     int spiralTicksNoColision;        // Before start spiral logic
     int wallsTicksNoColision;
-    bool wallInit;
+    bool wallInit;                      //Cuando está a True ejecuta busqueda de pared (solo se realiza una vez)
     bool wallSecondTurn;
 
     int sideTicks;              // numero de ticks inicilaes por cada lado de la espiral
