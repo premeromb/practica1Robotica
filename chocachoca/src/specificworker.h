@@ -62,18 +62,23 @@ private:
 	void chocachoca(RoboCompLaser::TLaserData ldata);
 
 
-    int spiralTicksNoColision;        // Before start spiral logic
     int wallsTicksNoColision;
     bool wallInit;                      //Cuando está a True ejecuta busqueda de pared (solo se realiza una vez)
     bool onWall;
+    int distWallMAX;                    // Distance to walls
+    int distWallMIN;
+    bool secondStageWall;
+    int thresholdWall;
+    int maxTicksWall;
+
 
     int sideTicks;              // numero de ticks inicilaes por cada lado de la espiral
     int currentSideTicks;       // numero de tics para el lado actual
 
     int currentTraveledTicks;
 
-
-    int contSideSpiral;         // cuneta los lados recorridos de la espiral // NO SE UASAAAAAAAAAAAAAAAAAAAAAAAA
+    int spiralTicksNoColision;        // Before start spiral logic
+    int contSideSpiral;             // cuneta los lados recorridos de la espiral // NO SE UASAAAAAAAAAAAAAAAAAAAAAAAA
     int contTurn;                   // cuenta los giros de 90º
 
 };

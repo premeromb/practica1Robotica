@@ -1,3 +1,4 @@
+
 /*
  *    Copyright (C) 2020 by YOUR NAME HERE
  *
@@ -60,6 +61,11 @@ void SpecificWorker::initialize(int period) {
 
     this->wallInit = true;
     this->onWall = false;
+    this->distWallMAX = 300;
+    this->distWallMIN = 248;
+    this->secondStageWall = false;
+    this->thresholdWall = 200;
+    this->maxTicksWall = 190;
 
     this->sideTicks = 2;
     this->currentSideTicks = 2;
@@ -75,7 +81,7 @@ void SpecificWorker::compute() {
     try {
         RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData();
 
-        std::vector<RoboCompLaser::TData> ldataWalls(ldata);
+        std::vector <RoboCompLaser::TData> ldataWalls(ldata);
 
         //sort laser data from small to large distances using a lambda function.
         std::sort(ldata.begin(), ldata.end(),
@@ -85,13 +91,14 @@ void SpecificWorker::compute() {
         //this->differentialrobot_proxy->getBasePose(x, z, f);
         //qDebug() << "Salida -> x: " << x << " z : " << z << " alpha: " << f;
 
-        /*                                                                  // <- Imprime vector con indices
+        // <- Imprime vector con indices
+/*
         for (long unsigned int i = 0; i < ldataWalls.size(); i++)
             std::cout << " Pos: " << i << "  ->  " << ldataWalls.data()[i].dist << std::endl;
-        */
 
+*/
         //for(auto &l : ldata) qDebug() << l.angle << l.dist;               // <- Imprime datos de vectores
-        //for(auto &l : ldataWalls) qDebug() << l.angle << l.dist;
+        //for (auto &l : ldataWalls) qDebug() << l.angle << l.dist;
 
         //std::terminate();
 
@@ -124,6 +131,7 @@ void SpecificWorker::spiral(RoboCompLaser::TLaserData ldata) {
         contTurn = 0;
         std::cout << " *** Spiral end ***" << std::endl;
 
+        std::cout << ldata.front().dist << std::endl;
         //Devuelve control a logida chocachoca sin avanzar (puede perder tiempo)
 
     } else {
@@ -152,42 +160,62 @@ void SpecificWorker::spiral(RoboCompLaser::TLaserData ldata) {
 }
 
 void SpecificWorker::walls(RoboCompLaser::TLaserData ldata, RoboCompLaser::TLaserData ldataWalls) {
-    float storeDist = 0;
+    float storeDistLeft = 0;
+    float storeDistFront = 0;
 
-    if (ldata.front().dist <
-        threshold)            //si choque //TODO controlar si es choque contra pared o contra obstaculo
+    for (long unsigned int i = 25; i <= 75; i++) {
+        storeDistFront += ldataWalls.data()[i].dist;
+    }
+    storeDistFront = storeDistFront / 51;
+
+    if (storeDistFront < thresholdWall)                 //si choque
     {
         std::cout << ldata.front().dist << std::endl;
-        differentialrobot_proxy->setSpeedBase(5, 1);
-        usleep(50);
+        differentialrobot_proxy->setSpeedBase(5, 2);
+        usleep(780000);
         onWall = true;
     } else {
+
+        //TODO AJUSTAR RADIO-TIMPO DE GIRO
+
         if (!wallInit) {
             //CONTROL DE APTITUD
             if (onWall) {
                 for (long unsigned int i = 90; i <= 95; i++)
-                    storeDist += ldataWalls.data()[i].dist;
-                storeDist = storeDist / 5;
-                qDebug() << "\n                   ** Distancia pared: " << storeDist << "\n";
+                    storeDistLeft += ldataWalls.data()[i].dist;
+                storeDistLeft = storeDistLeft / 5;
+                qDebug() << "\n                   ** Distancia pared: " << storeDistLeft << "\n";
 
-                if (storeDist > 280) {                                //El robot se separa de la pared
+                if (storeDistLeft > distWallMAX) {                                //El robot se separa de la pared
                     qDebug() << "\n                   ** Giro izquierda\n";
-                    differentialrobot_proxy->setSpeedBase(10, -1);     //giro izquierda
-                    usleep(1000);
-                } else if (storeDist < 210) {                          //El robot se pega a la pared
+                    differentialrobot_proxy->setSpeedBase(10, -2);     //giro izquierda
+                    usleep(42000);
+                } else if (storeDistLeft < distWallMIN) {                          //El robot se pega a la pared
                     qDebug() << "\n                   ** Giro derecha\n";
-                    differentialrobot_proxy->setSpeedBase(10, 1);      //giro derecha
-                    usleep(1000);
+                    differentialrobot_proxy->setSpeedBase(10, 2);      //giro derecha
+                    usleep(42000);
                 }
             }
             //AVANCE
             std::cout << "           +1 tick , WALLSTicks: " << wallsTicksNoColision << std::endl;
-            //TODO Ajustar velocidad a la distacia ldata.front().dist (lineal, exponencial o logaritmico)
-            differentialrobot_proxy->setSpeedBase(speedBase, 0);
 
+            //TODO Ajustar velocidad a la distacia ldata.front().dist (lineal, exponencial o logaritmico)
+
+            differentialrobot_proxy->setSpeedBase(speedBase, 0);
+            if (wallsTicksNoColision == 20 && secondStageWall) {
+                thresholdWall += 400;
+                maxTicksWall = 170;
+            }
             //CONDICION DE SALIDA
-            if (wallsTicksNoColision > 190) {       //Si n movimientos sin chocar, inicia espiral, rand 20-25
-                currentState = state::CHOCACHOCA;
+            if (wallsTicksNoColision > maxTicksWall) {       //Si n movimientos sin chocar, inicia espiral, rand 20-25
+                distWallMAX += 400;
+                distWallMIN += 400;
+                wallsTicksNoColision = 0;
+
+                if (secondStageWall) {
+                    currentState = state::CHOCACHOCA;
+                }
+                secondStageWall = true;
                 std::cout << " *** Walls End ***" << std::endl;
             } else                            //else lo incrementa
                 wallsTicksNoColision++;
@@ -200,6 +228,7 @@ void SpecificWorker::walls(RoboCompLaser::TLaserData ldata, RoboCompLaser::TLase
     }
 
 }
+
 
 void SpecificWorker::chocachoca(RoboCompLaser::TLaserData ldata) {
     if (ldata.front().dist < threshold)            //si menor
