@@ -59,6 +59,7 @@ void SpecificWorker::initialize(int period) {
     this->wallsTicksNoColision = 0;
 
     this->wallInit = true;
+    this->onWall = false;
 
     this->sideTicks = 2;
     this->currentSideTicks = 2;
@@ -77,14 +78,21 @@ void SpecificWorker::compute() {
         std::vector<RoboCompLaser::TData> ldataWalls(ldata);
 
         //sort laser data from small to large distances using a lambda function.
-        std::sort(ldata.begin(), ldata.end(),[](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
-        int x, z;
-        float f;
-        //this->differentialrobot_proxy->getBasePose(x, z, f);            // <- ASI PARA OBTENER POSICION
+        std::sort(ldata.begin(), ldata.end(),
+                  [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
+
+        //int x, z;  float f;                                               // <- OBTENER POSICION
+        //this->differentialrobot_proxy->getBasePose(x, z, f);
         //qDebug() << "Salida -> x: " << x << " z : " << z << " alpha: " << f;
 
-        //for(auto &l : ldata) qDebug() << l.angle << l.dist;
+        /*                                                                  // <- Imprime vector con indices
+        for (long unsigned int i = 0; i < ldataWalls.size(); i++)
+            std::cout << " Pos: " << i << "  ->  " << ldataWalls.data()[i].dist << std::endl;
+        */
+
+        //for(auto &l : ldata) qDebug() << l.angle << l.dist;               // <- Imprime datos de vectores
         //for(auto &l : ldataWalls) qDebug() << l.angle << l.dist;
+
         //std::terminate();
 
         switch (currentState) {
@@ -95,7 +103,7 @@ void SpecificWorker::compute() {
                 chocachoca(ldata);
                 break;
             case state::WALLS:
-                walls(ldata);
+                walls(ldata, ldataWalls);
                 break;
         }
     }
@@ -105,8 +113,7 @@ void SpecificWorker::compute() {
     }
 }
 
-void SpecificWorker::spiral(RoboCompLaser::TLaserData ldata)
-{
+void SpecificWorker::spiral(RoboCompLaser::TLaserData ldata) {
     if (ldata.front().dist < threshold)            //si menor
     {
         //en caso de choque suspende espiral
@@ -126,7 +133,7 @@ void SpecificWorker::spiral(RoboCompLaser::TLaserData ldata)
         if (contTurn == 1) {
             contTurn = 0;
             currentSideTicks = currentSideTicks + sideTicks;
-            std::cout << "       --- Spiral aumenta lado a recorrer a: " << currentSideTicks << std::endl;
+            std::cout << "       --- Spiral increment side to: " << currentSideTicks << std::endl;
         }
 
         if (currentTraveledTicks >= currentSideTicks)        //si ha recorrdo un lado completo gira
@@ -144,32 +151,47 @@ void SpecificWorker::spiral(RoboCompLaser::TLaserData ldata)
     }
 }
 
-void SpecificWorker::walls(RoboCompLaser::TLaserData ldata)
-{
-    if (ldata.front().dist < threshold)            //si choque
+void SpecificWorker::walls(RoboCompLaser::TLaserData ldata, RoboCompLaser::TLaserData ldataWalls) {
+    float storeDist = 0;
+
+    if (ldata.front().dist <
+        threshold)            //si choque //TODO controlar si es choque contra pared o contra obstaculo
     {
         std::cout << ldata.front().dist << std::endl;
         differentialrobot_proxy->setSpeedBase(5, 1);
         usleep(50);
-    }
-    else if(false) //TODO la dist de las posiciones excede rango se pega a la pared, si disminuye, se separa
-    {
+        onWall = true;
+    } else {
+        if (!wallInit) {
+            //CONTROL DE APTITUD
+            if (onWall) {
+                for (long unsigned int i = 90; i <= 95; i++)
+                    storeDist += ldataWalls.data()[i].dist;
+                storeDist = storeDist / 5;
+                qDebug() << "\n                   ** Distancia pared: " << storeDist << "\n";
 
-    }
-    else {
-        if(!wallInit)
-        {
+                if (storeDist > 280) {                                //El robot se separa de la pared
+                    qDebug() << "\n                   ** Giro izquierda\n";
+                    differentialrobot_proxy->setSpeedBase(10, -1);     //giro izquierda
+                    usleep(1000);
+                } else if (storeDist < 210) {                          //El robot se pega a la pared
+                    qDebug() << "\n                   ** Giro derecha\n";
+                    differentialrobot_proxy->setSpeedBase(10, 1);      //giro derecha
+                    usleep(1000);
+                }
+            }
+            //AVANCE
             std::cout << "           +1 tick , WALLSTicks: " << wallsTicksNoColision << std::endl;
             //TODO Ajustar velocidad a la distacia ldata.front().dist (lineal, exponencial o logaritmico)
             differentialrobot_proxy->setSpeedBase(speedBase, 0);
 
-            if (wallsTicksNoColision > 180) {       //Si n movimientos seguinos sin chocar, inicia espiral, rand 20-25 //TODO AJUSTAR
+            //CONDICION DE SALIDA
+            if (wallsTicksNoColision > 190) {       //Si n movimientos sin chocar, inicia espiral, rand 20-25
                 currentState = state::CHOCACHOCA;
                 std::cout << " *** Walls End ***" << std::endl;
             } else                            //else lo incrementa
                 wallsTicksNoColision++;
-        }
-        else {      //Arranque: gira 90º buscando una pared
+        } else {      //Arranque: gira 90º buscando una pared
             wallInit = false;
             qDebug() << "Entra en init";
             differentialrobot_proxy->setSpeedBase(5, rot);
@@ -177,13 +199,15 @@ void SpecificWorker::walls(RoboCompLaser::TLaserData ldata)
         }
     }
 
-}void SpecificWorker::chocachoca(RoboCompLaser::TLaserData ldata)
-{
+}
+
+void SpecificWorker::chocachoca(RoboCompLaser::TLaserData ldata) {
     if (ldata.front().dist < threshold)            //si menor
     {
         std::cout << ldata.front().dist << std::endl;
         differentialrobot_proxy->setSpeedBase(5, rot);
-        usleep(rand() % (1200000 - 100000 + 1) + 100000);  // random wait between 1s and 0.1sec //limitado el rango parawue no guire tanto y se entorsque
+        usleep(rand() % (1000000 - 100000 + 1) +
+               100000);  // random wait between 1.2s and 0.1sec //limitado el rango parawue no guire tanto y se entorsque
 
         //pone contador de n movimientos seguidos sin chocar a 0
         spiralTicksNoColision = 0;

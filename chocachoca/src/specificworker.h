@@ -57,7 +57,7 @@ private:
 
 	void spiral(RoboCompLaser::TLaserData ldata);
 
-	void walls(RoboCompLaser::TLaserData ldata);
+	void walls(RoboCompLaser::TLaserData ldata, RoboCompLaser::TLaserData ldataWalls);
 
 	void chocachoca(RoboCompLaser::TLaserData ldata);
 
@@ -65,7 +65,7 @@ private:
     int spiralTicksNoColision;        // Before start spiral logic
     int wallsTicksNoColision;
     bool wallInit;                      //Cuando está a True ejecuta busqueda de pared (solo se realiza una vez)
-    bool wallSecondTurn;
+    bool onWall;
 
     int sideTicks;              // numero de ticks inicilaes por cada lado de la espiral
     int currentSideTicks;       // numero de tics para el lado actual
