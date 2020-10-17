@@ -56,6 +56,8 @@ void SpecificWorker::initialize(int period) {
         timer.start(Period);
     }
 
+    this->speedBase = 1000;
+
     this->spiralTicksNoColision = 0;
     this->wallsTicksNoColision = 0;
 
@@ -64,15 +66,14 @@ void SpecificWorker::initialize(int period) {
     this->distWallMAX = 300;
     this->distWallMIN = 248;
     this->secondStageWall = false;
-    this->thresholdWall = 200;
-    this->maxTicksWall = 190;
+    this->thresholdWall = 190;
+    this->maxTicksWall = 220;
 
     this->sideTicks = 2;
     this->currentSideTicks = 2;
     this->currentTraveledTicks = 0;
     this->contSideSpiral = 0;
     this->contTurn = 0;
-
 }
 
 
@@ -81,23 +82,24 @@ void SpecificWorker::compute() {
     try {
         RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData();
 
-        std::vector <RoboCompLaser::TData> ldataWalls(ldata);
+        std::vector<RoboCompLaser::TData> ldataWalls(ldata);
 
         //sort laser data from small to large distances using a lambda function.
-        std::sort(ldata.begin(), ldata.end(),
-                  [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
+        std::sort(ldata.begin(), ldata.end(), [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
 
-        //int x, z;  float f;                                               // <- OBTENER POSICION
+        speedControl(ldataWalls);
+
+        // <- OBTENER POSICION
+        // int x, z;  float f;
         //this->differentialrobot_proxy->getBasePose(x, z, f);
         //qDebug() << "Salida -> x: " << x << " z : " << z << " alpha: " << f;
 
         // <- Imprime vector con indices
-/*
-        for (long unsigned int i = 0; i < ldataWalls.size(); i++)
-            std::cout << " Pos: " << i << "  ->  " << ldataWalls.data()[i].dist << std::endl;
+        //for (long unsigned int i = 0; i < ldataWalls.size(); i++)
+        //    std::cout << " Pos: " << i << "  ->  " << ldataWalls.data()[i].dist << std::endl;
 
-*/
-        //for(auto &l : ldata) qDebug() << l.angle << l.dist;               // <- Imprime datos de vectores
+        // <- Imprime datos de vectores
+        //for(auto &l : ldata) qDebug() << l.angle << l.dist;
         //for (auto &l : ldataWalls) qDebug() << l.angle << l.dist;
 
         //std::terminate();
@@ -114,25 +116,20 @@ void SpecificWorker::compute() {
                 break;
         }
     }
-
     catch (const Ice::Exception &ex) {
         std::cout << ex << std::endl;
     }
 }
 
 void SpecificWorker::spiral(RoboCompLaser::TLaserData ldata) {
-    if (ldata.front().dist < threshold)            //si menor
+    if (ldata.front().dist < threshold)             //en caso de choque suspende espiral
     {
-        //en caso de choque suspende espiral
         currentState = state::CHOCACHOCA;
         currentSideTicks = sideTicks;
         currentTraveledTicks = 0;
         contSideSpiral = 0;
         contTurn = 0;
         std::cout << " *** Spiral end ***" << std::endl;
-
-        std::cout << ldata.front().dist << std::endl;
-        //Devuelve control a logida chocachoca sin avanzar (puede perder tiempo)
 
     } else {
 
@@ -160,15 +157,8 @@ void SpecificWorker::spiral(RoboCompLaser::TLaserData ldata) {
 }
 
 void SpecificWorker::walls(RoboCompLaser::TLaserData ldata, RoboCompLaser::TLaserData ldataWalls) {
-    float storeDistLeft = 0;
-    float storeDistFront = 0;
 
-    for (long unsigned int i = 25; i <= 75; i++) {
-        storeDistFront += ldataWalls.data()[i].dist;
-    }
-    storeDistFront = storeDistFront / 51;
-
-    if (storeDistFront < thresholdWall)                 //si choque
+    if (frontDist(ldataWalls) < thresholdWall)                 //si choque
     {
         std::cout << ldata.front().dist << std::endl;
         differentialrobot_proxy->setSpeedBase(5, 2);
@@ -181,16 +171,12 @@ void SpecificWorker::walls(RoboCompLaser::TLaserData ldata, RoboCompLaser::TLase
         if (!wallInit) {
             //CONTROL DE APTITUD
             if (onWall) {
-                for (long unsigned int i = 90; i <= 95; i++)
-                    storeDistLeft += ldataWalls.data()[i].dist;
-                storeDistLeft = storeDistLeft / 5;
-                qDebug() << "\n                   ** Distancia pared: " << storeDistLeft << "\n";
 
-                if (storeDistLeft > distWallMAX) {                                //El robot se separa de la pared
+                if (leftDist(ldataWalls) > distWallMAX) {           //El robot se separa de la pared
                     qDebug() << "\n                   ** Giro izquierda\n";
                     differentialrobot_proxy->setSpeedBase(10, -2);     //giro izquierda
                     usleep(42000);
-                } else if (storeDistLeft < distWallMIN) {                          //El robot se pega a la pared
+                } else if (leftDist(ldataWalls) < distWallMIN) {    //El robot se pega a la pared
                     qDebug() << "\n                   ** Giro derecha\n";
                     differentialrobot_proxy->setSpeedBase(10, 2);      //giro derecha
                     usleep(42000);
@@ -203,30 +189,31 @@ void SpecificWorker::walls(RoboCompLaser::TLaserData ldata, RoboCompLaser::TLase
 
             differentialrobot_proxy->setSpeedBase(speedBase, 0);
             if (wallsTicksNoColision == 20 && secondStageWall) {
-                thresholdWall += 400;
-                maxTicksWall = 170;
+                thresholdWall += 320; //ajustable from 400
+                maxTicksWall = 195;   //from 200
             }
             //CONDICION DE SALIDA
             if (wallsTicksNoColision > maxTicksWall) {       //Si n movimientos sin chocar, inicia espiral, rand 20-25
                 distWallMAX += 400;
                 distWallMIN += 400;
-                wallsTicksNoColision = 0;
-
+                wallsTicksNoColision = 20;
                 if (secondStageWall) {
+                    differentialrobot_proxy->setSpeedBase(5, 2);
+                    usleep(780000);
                     currentState = state::CHOCACHOCA;
+                    std::cout << " *** Walls End ***" << std::endl;
                 }
+                std::cout << " *** Walls -SECOND STAGE- ***" << std::endl << std::endl;
                 secondStageWall = true;
-                std::cout << " *** Walls End ***" << std::endl;
-            } else                            //else lo incrementa
+            } else                              //else lo incrementa
                 wallsTicksNoColision++;
-        } else {      //Arranque: gira 90º buscando una pared
+        } else {                                //Arranque: gira 90º buscando una pared
             wallInit = false;
             qDebug() << "Entra en init";
             differentialrobot_proxy->setSpeedBase(5, rot);
-            usleep(780000);  // tiempo aprox para girar 90º a 2 rad/s
+            usleep(780000);         // tiempo aprox para girar 90º a 2 rad/s
         }
     }
-
 }
 
 
@@ -235,14 +222,11 @@ void SpecificWorker::chocachoca(RoboCompLaser::TLaserData ldata) {
     {
         std::cout << ldata.front().dist << std::endl;
         differentialrobot_proxy->setSpeedBase(5, rot);
-        usleep(rand() % (1000000 - 100000 + 1) +
-               100000);  // random wait between 1.2s and 0.1sec //limitado el rango parawue no guire tanto y se entorsque
-
+        usleep(rand() % (1000000 - 100000 + 1) + 100000);
         //pone contador de n movimientos seguidos sin chocar a 0
         spiralTicksNoColision = 0;
     } else {
         std::cout << "        +1 tick , totTicks: " << spiralTicksNoColision << std::endl;
-        //TODO Ajustar velocidad a la distacia ldata.front().dist (lineal, exponencial o logaritmico)
         differentialrobot_proxy->setSpeedBase(speedBase, 0);
 
         if (spiralTicksNoColision > 15) {       //Si n movimientos seguinos sin chocar, inicia espiral, rand 20-25
@@ -253,12 +237,32 @@ void SpecificWorker::chocachoca(RoboCompLaser::TLaserData ldata) {
     }
 }
 
+void SpecificWorker::speedControl(RoboCompLaser::TLaserData ldataWalls) {
+    if (frontDist((ldataWalls)) < 600) {
+        speedBase = 800;
+    } else
+        speedBase = 1000;
+}
+
+int SpecificWorker::frontDist(RoboCompLaser::TLaserData ldataWalls) {
+    float storeDistFront = 0;
+    for (long unsigned int i = 25; i <= 75; i++) {
+        storeDistFront += ldataWalls.data()[i].dist;
+    }
+    return storeDistFront / 51;
+}
+
+int SpecificWorker::leftDist(RoboCompLaser::TLaserData ldataWalls) {
+    float storeDistLeft = 0;
+    for (long unsigned int i = 90; i <= 95; i++)
+        storeDistLeft += ldataWalls.data()[i].dist;
+    return storeDistLeft / 5;
+}
 
 int SpecificWorker::startup_check() {
     std::cout << "Startup check" << std::endl;
     QTimer::singleShot(200, qApp, SLOT(quit()));
     return 0;
-
 }
 
 

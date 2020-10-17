@@ -32,7 +32,7 @@
 
 const float threshold = 200;    // millimeters
 const float rot = 2;            // rads per second
-const int speedBase = 1000;     //1000 mm/s
+
 
 class SpecificWorker : public GenericWorker
 {
@@ -55,21 +55,29 @@ private:
     enum class state {CHOCACHOCA, SPIRAL, WALLS};
     state currentState = state::WALLS; //TODO Al init
 
+    void speedControl(RoboCompLaser::TLaserData ldata);
+
+    int frontDist(RoboCompLaser::TLaserData ldata);
+    int leftDist(RoboCompLaser::TLaserData ldata);
+
 	void spiral(RoboCompLaser::TLaserData ldata);
 
 	void walls(RoboCompLaser::TLaserData ldata, RoboCompLaser::TLaserData ldataWalls);
 
 	void chocachoca(RoboCompLaser::TLaserData ldata);
 
+    //Sets speed as a function of the distance to the wall
+	int speedBase;
 
     int wallsTicksNoColision;
+
     bool wallInit;                      //Cuando está a True ejecuta busqueda de pared (solo se realiza una vez)
     bool onWall;
     int distWallMAX;                    // Distance to walls
     int distWallMIN;
     bool secondStageWall;
     int thresholdWall;
-    int maxTicksWall;
+    int maxTicksWall;                   //Numero de tick en dar una vuelta
 
 
     int sideTicks;              // numero de ticks inicilaes por cada lado de la espiral
@@ -77,9 +85,9 @@ private:
 
     int currentTraveledTicks;
 
-    int spiralTicksNoColision;        // Before start spiral logic
-    int contSideSpiral;             // cuneta los lados recorridos de la espiral // NO SE UASAAAAAAAAAAAAAAAAAAAAAAAA
-    int contTurn;                   // cuenta los giros de 90º
+    int spiralTicksNoColision;          // Before start spiral logic
+    int contSideSpiral;                 // cuneta los lados recorridos de la espiral // NO SE UASAAAAAAAAAAAAAAAAAAAAAAAA
+    int contTurn;                       // cuenta los giros de 90º
 
 };
 
