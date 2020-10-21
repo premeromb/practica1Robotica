@@ -1,0 +1,62 @@
+/snap/clion/129/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/robocomp/robocomp/components/promeromb/practica1Robotica/chocachoca/src
+CMake Warning (dev) in CMakeLists.txt:
+  No project() command is present.  The top-level CMakeLists.txt file must
+  contain a literal, direct call to the project() command.  Add a line of
+  code such as
+
+    project(ProjectName)
+
+  near the top of the file, but after cmake_minimum_required().
+
+  CMake is pretending there is a "project(Project)" command on the first
+  line.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- The C compiler identification is GNU 9.3.0
+-- The CXX compiler identification is GNU 9.3.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc - works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ - works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Warning at CMakeLists.txt:5 (MESSAGE):
+  ROBOCOMP variable not set.  Using the default value: /opt/robocomp
+
+
+-- COMPILING WITH QT5
+-- RoboComp root is now set to /opt/robocomp//
+-- 
+-- Ice version: 3.7.3
+-- Found the following Ice libraries:
+--   Ice (required)
+--   IceStorm (required)
+-- The following Ice libraries were not found:
+--   IceUtil (optional)
+-- Found Ice: /usr/bin/slice2cpp (found version "3.7.3") 
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - found
+-- Found Threads: TRUE  
+-- Adding rule to generate CommonBehavior.ice from /opt/robocomp//interfaces/IDSLs/CommonBehavior.idsl
+-- Adding rule to generate DifferentialRobot.ice from /opt/robocomp//interfaces/IDSLs/DifferentialRobot.idsl
+-- Adding rule to generate GenericBase.ice from /opt/robocomp//interfaces/IDSLs/GenericBase.idsl
+-- Adding rule to generate Laser.ice from /opt/robocomp//interfaces/IDSLs/Laser.idsl
+-- Adding rule to generate CommonBehavior.h and CommonBehavior.cpp from CommonBehavior.ice
+-- Adding rule to generate DifferentialRobot.h and DifferentialRobot.cpp from DifferentialRobot.ice
+-- Adding rule to generate GenericBase.h and GenericBase.cpp from GenericBase.ice
+-- Adding rule to generate Laser.h and Laser.cpp from Laser.ice
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/robocomp/robocomp/components/promeromb/practica1Robotica/chocachoca/src/cmake-build-debug
