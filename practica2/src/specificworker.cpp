@@ -190,7 +190,7 @@ void SpecificWorker::walls(RoboCompLaser::TLaserData ldata, RoboCompLaser::TLase
             differentialrobot_proxy->setSpeedBase(speedBase, 0);
             if (wallsTicksNoColision == 20 && secondStageWall) {
                 thresholdWall += 320; //ajustable from 400
-                maxTicksWall = 195;   //from 200
+                maxTicksWall = 197;   //from 200
             }
             //CONDICION DE SALIDA
             if (wallsTicksNoColision > maxTicksWall) {       //Si n movimientos sin chocar, inicia espiral, rand 20-25
