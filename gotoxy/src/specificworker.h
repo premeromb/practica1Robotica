@@ -28,6 +28,9 @@
 #define SPECIFICWORKER_H
 
 #include <genericworker.h>
+
+#include <Eigen/Dense>
+
 #include <innermodel/innermodel.h>
 
 class SpecificWorker : public GenericWorker
@@ -47,24 +50,27 @@ public slots:
 	void compute();
 	int startup_check();
 	void initialize(int period);
+	void turn(float beta);
 
 private:
-
+    template <typename T>
     struct Target {
-        float x = 0.0, z = 0.0, angle;
+        T data;
+
         std::atomic<bool> active = false;        //Si false, valor desactualizado
         mutable std::mutex mnt;
 
-        void put(float x_, float z_) {
+        void put(const T &&data_) {  // && cambia el "dueño" de la variable sin nombre sin hacer "copia" a este espacio
             std::lock_guard<std::mutex> lock(mnt);
-            this->x = x_; this->z = z_;
+            data = data_;
             this->active = true;
         }
         //Toma posición objetivo
-        std::optional<std::tuple<float, float>> get() const {
+        std::optional<T> get() const {
             std::lock_guard<std::mutex> lock(mnt);
             if (active)
-                return std::make_tuple(x, z);
+                //return std::make_tuple(x, z);
+                return data;
             else
                 return {};
         }
@@ -73,7 +79,9 @@ private:
             this->active = false;
         }
     };
-    Target tg;
+
+    Target <Eigen::Vector2f> tg;
+
 
     enum class state {IDLE, TURN, MOVE};
     state currentState = state::IDLE;

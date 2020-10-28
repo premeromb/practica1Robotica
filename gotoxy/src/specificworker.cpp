@@ -54,23 +54,56 @@ void SpecificWorker::initialize(int period) {
     } else {
         timer.start(Period);
     }
+
+}
+
+void SpecificWorker::turn(float beta){
+
+    if (fabs(beta) < 0.05){ // Direccion ok
+        //parar
+        currentState = state::MOVE;//cambiar estado a avanzar
+        return;
+    }else{
+        //gira beta
+
+    }
 }
 
 void SpecificWorker::compute() {
 
-    //RoboCompDifferentialRobot::TBaseState bState;
-    //differentialrobot_proxy->getBaseState(bState);
+    RoboCompGenericBase::TBaseState bState;
+    differentialrobot_proxy->getBaseState(bState);
 
     try {
         if (auto t = tg.get(); t.has_value()) {
-            auto[x, z] = t.value();
+            auto tw = t.value();
+
+            Eigen::Vector2f rw (bState.x, bState.z);
+            Eigen::Matrix2f rot;
+
+            rot << cos(bState.alpha), sin(bState.alpha) , -sin(bState.alpha), cos(bState.alpha) ;
+
+            auto tr = rot * (tw - rw);
+            auto beta = atan2(tr.x(), tr.y());
+            auto dist = tr.norm();
+
+            qDebug() << " Distancia a target. " << dist << " Beta: " << beta;
+
+            if (dist < 50){
+                currentState = state::IDLE,
+                differentialrobot_proxy->setSpeedBase(0, 0);
+                tg.setActiveFalse();
+            }
+
             switch (currentState) {
                 case state::IDLE:
-                   // qDebug() << "Posicion detectada: " << x << " " << z;
+                    //qDebug() << "Posicion detectada: " << x << " " << z;
                     break;
                 case state::TURN:
+
                     break;
                 case state::MOVE:
+                    //
                     break;
             }
         }
@@ -91,9 +124,8 @@ int SpecificWorker::startup_check() {
 
 //SUBSCRIPTION to setPick method from RCISMousePicker interface
 void SpecificWorker::RCISMousePicker_setPick(RoboCompRCISMousePicker::Pick myPick) {
-    //subscribesToCODE //TODO ¿¿??
-    std::cout << myPick.x << myPick.z << endl;
-    tg.put(myPick.x, myPick.z);
+    //std::cout << myPick.x << " " << myPick.z << endl;
+    tg.put(Eigen::Vector2f (myPick.x, myPick.z));
 }
 
 
