@@ -34,27 +34,28 @@
 const int MAX_ADVANCE = 1000;   // mm/s
 const int MAX_TURN = 2;         // rad/s
 
-class SpecificWorker : public GenericWorker
-{
+class SpecificWorker : public GenericWorker {
 Q_OBJECT
 public:
 
-	SpecificWorker(TuplePrx tprx, bool startup_check);
-	~SpecificWorker();
+    SpecificWorker(TuplePrx tprx, bool startup_check);
 
-	bool setParams(RoboCompCommonBehavior::ParameterList params);
+    ~SpecificWorker();
 
-	void RCISMousePicker_setPick(RoboCompRCISMousePicker::Pick myPick);
+    bool setParams(RoboCompCommonBehavior::ParameterList params);
+
+    void RCISMousePicker_setPick(RoboCompRCISMousePicker::Pick myPick);
 
 public slots:
 
-	void compute();
-	int startup_check();
-	void initialize(int period);
-	void turn(float beta);
+    void compute();
+
+    int startup_check();
+
+    void initialize(int period);
 
 private:
-    template <typename T>
+    template<typename T>
     struct Target {
         T data;
 
@@ -66,6 +67,7 @@ private:
             data = data_;
             this->active = true;
         }
+
         //Toma posición objetivo
         std::optional<T> get() const {
             std::lock_guard<std::mutex> lock(mnt);
@@ -75,20 +77,23 @@ private:
             else
                 return {};
         }
+
         //Cuando llegue al objetivo, desactiva flag
         void setActiveFalse() {
             this->active = false;
         }
     };
 
-    Target <Eigen::Vector2f> tg;
+    Target<Eigen::Vector2f> tg;
 
 
-    enum class state {IDLE, TURN, MOVE};
+    enum class state {
+        IDLE, TURN, MOVE
+    };
     state currentState = state::IDLE;
 
-	std::shared_ptr < InnerModel > innerModel;
-	bool startup_check_flag;
+    std::shared_ptr<InnerModel> innerModel;
+    bool startup_check_flag;
 
 };
 

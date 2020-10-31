@@ -1,5 +1,5 @@
 /*
- *    Copyright (C) 2020 by YOUR NAME HERE
+ *    Copyright (C) 2020 by PABLO ROMERO MUÑOZ
  *
  *    This file is part of RoboComp
  *
@@ -46,15 +46,6 @@ void SpecificWorker::initialize(int period) {
     }
 }
 
-void SpecificWorker::turn(float beta){
-    if (fabs(beta) < 0.05){ // Direccion ok
-        differentialrobot_proxy->setSpeedBase(0, 0);        // Stop
-        currentState = state::MOVE;//cambiar estado a avanzar
-        return;
-    }else{
-        differentialrobot_proxy->setSpeedBase(20, 0.5);        // Stop
-    }
-}
 
 void SpecificWorker::compute() {
 
@@ -65,24 +56,28 @@ void SpecificWorker::compute() {
         if (auto t = tg.get(); t.has_value()) {
             auto tw = t.value();
 
-            Eigen::Vector2f rw (bState.x, bState.z);
+            Eigen::Vector2f rw(bState.x, bState.z);
             Eigen::Matrix2f rot;
 
-            rot << cos(bState.alpha), -sin(bState.alpha) , sin(bState.alpha), cos(bState.alpha) ;
+            rot << cos(bState.alpha), -sin(bState.alpha), sin(bState.alpha), cos(bState.alpha);
 
             auto tr = rot * (tw - rw);
             auto beta = atan2(tr.x(), tr.y());
             auto dist = tr.norm();
 
-            qDebug() << " Distancia a target. " << dist << " Beta: " << beta;
+            qDebug() << "                 Distace to target. " << dist << " Beta: " << beta;
 
-            if (dist < 50){                     // On target
+            if (dist < 50) {                     // On target
                 differentialrobot_proxy->setSpeedBase(0, 0);        // Stop
                 tg.setActiveFalse();
-            }else {
-                auto vrot = 2 * beta;
-                auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.2171472);;
-                differentialrobot_proxy->setSpeedBase(vadv, vrot);
+                qDebug() << "\n           *** On target ***\n";
+            } else {
+                auto vrot = MAX_TURN * beta;
+                //auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.2171472);      // lambda = (-0,5)/Ln(0,1)
+                //auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.415291);       // lambda = (-0,5)/Ln(0,3)
+                auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot * vrot) / 0.7213475);     // lambda = (-0,5)/Ln(0,5)
+
+                differentialrobot_proxy->setSpeedBase(vadv, vrot);  // Go to target
             }
         }
     }
@@ -101,7 +96,8 @@ int SpecificWorker::startup_check() {
 //SUBSCRIPTION to setPick method from RCISMousePicker interface
 void SpecificWorker::RCISMousePicker_setPick(RoboCompRCISMousePicker::Pick myPick) {
     //std::cout << myPick.x << " " << myPick.z << endl;
-    tg.put(Eigen::Vector2f (myPick.x, myPick.z));
+    tg.put(Eigen::Vector2f(myPick.x, myPick.z));
+    qDebug() << "\n           *** New target: [" << tg.data.x() << ", " << tg.data.y() << "] ***\n";
 }
 
 
