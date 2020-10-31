@@ -80,20 +80,8 @@ void SpecificWorker::compute() {
                 differentialrobot_proxy->setSpeedBase(0, 0);        // Stop
                 tg.setActiveFalse();
             }else {
-                //turn(beta);
-
-
-                float vrot;
-                if (beta > 0)
-                    vrot = 2;
-                else
-                    vrot = -2;
-
-                //float elGiro = turn * exp(-(vrot * vrot) / 0.2171472);
-                //vrot =
-                auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)); // * exp(-(vrot*vrot)/0.2171472);
-                //qDebug() << "           *** elGiro: " << vrot << " vadv: " << vadv << " exp: "
-                //         << exp(-(vrot * vrot) / 0.2171472);
+                auto vrot = 2 * beta;
+                auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.2171472);;
                 differentialrobot_proxy->setSpeedBase(vadv, vrot);
             }
         }
@@ -101,8 +89,6 @@ void SpecificWorker::compute() {
     catch (const Ice::Exception &e) {
         std::cout << e << std::endl;
     }
-
-
 }
 
 int SpecificWorker::startup_check() {
