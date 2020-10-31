@@ -22,8 +22,6 @@
 	@author Pablo Romero Muñoz
 */
 
-
-
 #ifndef SPECIFICWORKER_H
 #define SPECIFICWORKER_H
 
@@ -32,6 +30,9 @@
 #include <Eigen/Dense>
 
 #include <innermodel/innermodel.h>
+
+const int MAX_ADVANCE = 1000;   // mm/s
+const int MAX_TURN = 2;         // rad/s
 
 class SpecificWorker : public GenericWorker
 {

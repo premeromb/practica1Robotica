@@ -33,16 +33,6 @@ SpecificWorker::~SpecificWorker() {
 }
 
 bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params) {
-//	THE FOLLOWING IS JUST AN EXAMPLE
-//	To use innerModelPath parameter you should uncomment specificmonitor.cpp readConfig method content
-//	try
-//	{
-//		RoboCompCommonBehavior::Parameter par = params.at("InnerModelPath");
-//		std::string innermodel_path = par.value;
-//		innerModel = std::make_shared(innermodel_path);
-//	}
-//	catch(const std::exception &e) { qFatal("Error reading config params"); }
-
     return true;
 }
 
@@ -54,18 +44,15 @@ void SpecificWorker::initialize(int period) {
     } else {
         timer.start(Period);
     }
-
 }
 
 void SpecificWorker::turn(float beta){
-
     if (fabs(beta) < 0.05){ // Direccion ok
-        //parar
+        differentialrobot_proxy->setSpeedBase(0, 0);        // Stop
         currentState = state::MOVE;//cambiar estado a avanzar
         return;
     }else{
-        //gira beta
-
+        differentialrobot_proxy->setSpeedBase(20, 0.5);        // Stop
     }
 }
 
@@ -81,7 +68,7 @@ void SpecificWorker::compute() {
             Eigen::Vector2f rw (bState.x, bState.z);
             Eigen::Matrix2f rot;
 
-            rot << cos(bState.alpha), sin(bState.alpha) , -sin(bState.alpha), cos(bState.alpha) ;
+            rot << cos(bState.alpha), -sin(bState.alpha) , sin(bState.alpha), cos(bState.alpha) ;
 
             auto tr = rot * (tw - rw);
             auto beta = atan2(tr.x(), tr.y());
@@ -89,22 +76,25 @@ void SpecificWorker::compute() {
 
             qDebug() << " Distancia a target. " << dist << " Beta: " << beta;
 
-            if (dist < 50){
-                currentState = state::IDLE,
-                differentialrobot_proxy->setSpeedBase(0, 0);
+            if (dist < 50){                     // On target
+                differentialrobot_proxy->setSpeedBase(0, 0);        // Stop
                 tg.setActiveFalse();
-            }
+            }else {
+                //turn(beta);
 
-            switch (currentState) {
-                case state::IDLE:
-                    //qDebug() << "Posicion detectada: " << x << " " << z;
-                    break;
-                case state::TURN:
 
-                    break;
-                case state::MOVE:
-                    //
-                    break;
+                float vrot;
+                if (beta > 0)
+                    vrot = 2;
+                else
+                    vrot = -2;
+
+                //float elGiro = turn * exp(-(vrot * vrot) / 0.2171472);
+                //vrot =
+                auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)); // * exp(-(vrot*vrot)/0.2171472);
+                //qDebug() << "           *** elGiro: " << vrot << " vadv: " << vadv << " exp: "
+                //         << exp(-(vrot * vrot) / 0.2171472);
+                differentialrobot_proxy->setSpeedBase(vadv, vrot);
             }
         }
     }
