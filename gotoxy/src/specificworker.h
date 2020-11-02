@@ -86,15 +86,8 @@ private:
 
     Target<Eigen::Vector2f> tg;
 
-
-    enum class state {
-        IDLE, TURN, MOVE
-    };
-    state currentState = state::IDLE;
-
     std::shared_ptr<InnerModel> innerModel;
     bool startup_check_flag;
-
 };
 
 #endif
