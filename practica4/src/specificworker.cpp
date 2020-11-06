@@ -52,11 +52,13 @@ void SpecificWorker::compute() {
 
     // Lectura laser
 
+    RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData();
+
+    //sort laser data from small to large distances using a lambda function.
+    std::sort(ldata.begin(), ldata.end(), [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
+
     // excluir puntos de distancia menor
 
-    // por cada uno calcular unitario * 1/d² y sumar (restar) al del target
-
-    //con ese vector podremos calcular sus coordenadas con respecto al vector y
 
 
 
@@ -75,6 +77,31 @@ void SpecificWorker::compute() {
     try {
         if (auto t = tg.get(); t.has_value()) {
             auto tw = t.value();
+
+
+            RoboCompLaser::TLaserData ldataMov;
+            for (auto &p : ldata){
+                if (p.dist > 1000)               // TODO AJUSTAR DISTANCIA
+                    break;
+                ldataMov.push_back(p);
+            }
+            qDebug() << "     Distance to target : " << tw.norm() << "\n";
+            if (ldataMov.empty())
+                qDebug() << "                           eeeeee no.";
+            //for(auto &l : ldataMov) qDebug() << l.angle << l.dist;
+
+            // por cada uno calcular unitario * 1/d² y sumar (restar) al del target
+            for (auto &p : ldataMov) {
+                Eigen::Vector2f tempVector((-((p.dist * cos(p.angle))/p.dist) * 1/pow(p.dist, 2)), -((p.dist * sin(p.angle))/p.dist) * 1 / pow(p.dist, 2));
+                //qDebug() << "    *  Vector unitario: ";
+                //qDebug() << "x:" << unitVector.x() << " y:" << unitVector.y() << " modulo: " << (float)unitVector.norm();
+                tw += tempVector;
+            }
+
+            qDebug() << "    *  Vector target calculado: ";
+            qDebug() << "x:" << tw.x() << " y:" << tw.y() << " modulo: " << tw.norm();
+
+            //std::terminate();
 
             Eigen::Vector2f rw(bState.x, bState.z);
             Eigen::Matrix2f rot;
@@ -121,7 +148,7 @@ int SpecificWorker::startup_check() {
 void SpecificWorker::RCISMousePicker_setPick(RoboCompRCISMousePicker::Pick myPick) {
     //std::cout << myPick.x << " " << myPick.z << endl;
     tg.put(Eigen::Vector2f(myPick.x, myPick.z));
-    qDebug() << "\n           *** New target: [" << tg.data.x() << ", " << tg.data.y() << "] ***\n";
+    qDebug() << "\n           *** New target: [" << tg.data.x() << ", " << tg.data.y() << "]  ***\n";
 }
 
 
