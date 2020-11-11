@@ -49,24 +49,18 @@ void SpecificWorker::initialize(int period) {
 
 void SpecificWorker::compute() {
 
-
     // Lectura laser
 
-    RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData();
+    RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData();          // laserData read
 
     //sort laser data from small to large distances using a lambda function.
     std::sort(ldata.begin(), ldata.end(), [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
 
     // excluir puntos de distancia menor
 
-
-
-
-
     //si no hay ningun obstaculo la resultante será una recta hacia el target, ir metiendo uno a uno los obstaculso e ir  ajustando
 
     // si hay alun mínimo en que se pare, poner aleatorio o que reucpere hacu atras
-
 
     // qgraficview y otro qtl, asignando origen, puedo pintar un circulo y represental los vectores para depurar, a modo de ejemplo pintar un robot y un laser
 
@@ -75,28 +69,47 @@ void SpecificWorker::compute() {
     differentialrobot_proxy->getBaseState(bState);
 
     try {
-        if (auto t = tg.get(); t.has_value()) {
-            auto tw = t.value();
+        if (auto newTarget = tg.get(); newTarget.has_value()) {
+            auto tw = newTarget.value();
 
+            RoboCompLaser::TLaserData ldataObstacles;     // new vector to avoid obstacles
 
-            RoboCompLaser::TLaserData ldataMov;
-            for (auto &p : ldata){
-                if (p.dist > 1000)               // TODO AJUSTAR DISTANCIA
+            for (auto &p : ldata){                  // push on new list
+                if (p.dist > 1000)
                     break;
-                ldataMov.push_back(p);
+                ldataObstacles.push_back(p);
             }
-            qDebug() << "     Distance to target : " << tw.norm() << "\n";
-            if (ldataMov.empty())
-                qDebug() << "                           eeeeee no.";
-            //for(auto &l : ldataMov) qDebug() << l.angle << l.dist;
+            Eigen::Vector2f acumVector(0, 0);          // Accumulate all force vectors
 
             // por cada uno calcular unitario * 1/d² y sumar (restar) al del target
-            for (auto &p : ldataMov) {
-                Eigen::Vector2f tempVector((-((p.dist * cos(p.angle))/p.dist) * 1/pow(p.dist, 2)), -((p.dist * sin(p.angle))/p.dist) * 1 / pow(p.dist, 2));
-                //qDebug() << "    *  Vector unitario: ";
-                //qDebug() << "x:" << unitVector.x() << " y:" << unitVector.y() << " modulo: " << (float)unitVector.norm();
-                tw += tempVector;
+            for (auto &p : ldataObstacles) {
+                // The same as before but in one line
+                //Eigen::Vector2f tempVector((-((p.dist * cos(p.angle))/p.dist) * 1/pow(p.dist, 2)), -((p.dist * sin(p.angle))/p.dist) * 1 / pow(p.dist, 2));
+
+                Eigen::Vector2f tempVector(p.dist * cos(p.angle), p.dist * sin(p.angle));          // Cortesian coordinates
+
+                tempVector.x() = -tempVector.x(); tempVector.y() = -tempVector.y();                      // Oposite direction
+
+                tempVector.x() = tempVector.x() / p.dist; tempVector.y() = tempVector.y() / p.dist;     // Module 1 vector
+
+                tempVector.x() = tempVector.x() * 100 * pow(100/p.dist, 2);           // Transformation to force
+                tempVector.y() = tempVector.y() * 100 * pow(100/p.dist, 2);
+
+                // The same as before but in one line
+                //Eigen::Vector2f tempVector((-((p.dist * cos(p.angle))/p.dist) * 1/pow(p.dist, 2)), -((p.dist * sin(p.angle))/p.dist) * 1 / pow(p.dist, 2));
+                //qDebug() << "               Vector de desvío : ";
+                //qDebug() << "               x:" << tempVector.x() << " y:" << tempVector.y() << " modulo: " << (float)tempVector.norm();
+
+                //std::terminate();
+
+                //tempVector += tempVector;
+                acumVector += tempVector;           // Acum all forces
             }
+
+            qDebug() << "               Vector de desvío : ";
+            qDebug() << "               x:" << acumVector.x() << " y:" << acumVector.y() << " modulo: " << (float)acumVector.norm();
+
+            tw += acumVector;            // IS this??
 
             qDebug() << "    *  Vector target calculado: ";
             qDebug() << "x:" << tw.x() << " y:" << tw.y() << " modulo: " << tw.norm();
