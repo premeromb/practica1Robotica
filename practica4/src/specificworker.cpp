@@ -101,7 +101,6 @@ void SpecificWorker::compute() {
                 //qDebug() << "               x:" << tempVector.x() << " y:" << tempVector.y() << " modulo: " << (float)tempVector.norm();
 
                 //std::terminate();
-
                 //tempVector += tempVector;
                 acumVector += tempVector;           // Acum all forces
             }
