@@ -91,9 +91,13 @@ private:
     bool startup_check_flag;
 
     RoboCompLaser::TLaserData ldataObstacles;
+    RoboCompLaser::TLaserData ldata;
+
     bool flag_obstacle;
 
     void readLaserObstacles();
+
+    bool checkTargetInsideLaserPolygon(QPointF point);
 
     void potentialFieldMethod(Eigen::Vector2f &acumVector);
 

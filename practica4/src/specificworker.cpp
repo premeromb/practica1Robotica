@@ -52,7 +52,7 @@ void SpecificWorker::initialize(int period) {
 }
 
 void SpecificWorker::readLaserObstacles() {
-    RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData();          // laserData read
+    ldata = laser_proxy->getLaserData();          // laserData read
     std::sort(ldata.begin(), ldata.end(),
               [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
     ldataObstacles.clear();
@@ -63,17 +63,33 @@ void SpecificWorker::readLaserObstacles() {
     }
 }
 
+bool SpecificWorker::checkTargetInsideLaserPolygon(QPointF point) {
+
+    //// create laser polygon
+    //QPolygonF laser_poly;
+    //for (auto &l : ldata)
+    //    laser_poly << QPointF(l.dist * sin(l.angle), l.dist * cos(l.angle));
+    //QPointF pointF;
+    //// check intersection
+    //if (laser_poly.containsPoint(point))  // point to check. Must be in robot’s coordinate system
+    //    return true;
+    //else
+    //    return false;
+
+}
+
 void SpecificWorker::potentialFieldMethod(Eigen::Vector2f &acumVector) {
     float operation = 1;
-
-    for (auto &p : ldataObstacles) {
-        operation = pow(1 / (p.dist / 2000), 3);
-        if (operation > 50)
-            operation = 50;
-        Eigen::Vector2f tempVector(-((p.dist * sin(p.angle)) / p.dist) * operation,
-                                   -((p.dist * cos(p.angle)) / p.dist) * operation);
-        acumVector += tempVector;           // Acum all forces
-    }
+    //if (!checkTargetInsideLaserPolygon(acumVector)) {
+        for (auto &p : ldataObstacles) {
+            operation = pow(1 / (p.dist / 2000), 3);
+            if (operation > 50)
+                operation = 50;
+            Eigen::Vector2f tempVector(-((p.dist * sin(p.angle)) / p.dist) * operation,
+                                       -((p.dist * cos(p.angle)) / p.dist) * operation);
+            acumVector += tempVector;           // Acum all forces
+        }
+    //}
 }
 
 void SpecificWorker::goToTarget(Eigen::Matrix<float, 2, 1> tw) {
@@ -111,7 +127,7 @@ void SpecificWorker::goToTarget(Eigen::Matrix<float, 2, 1> tw) {
 void SpecificWorker::compute() {
     try {
         if (auto newTarget = tg.get(); newTarget.has_value()) {
-            auto tw = newTarget.value();
+            auto targetw = newTarget.value();
 
             readLaserObstacles();
 
@@ -123,12 +139,12 @@ void SpecificWorker::compute() {
             qDebug() << "               x:" << acumVector.x() << " y:" << acumVector.y() << " modulo: "
                      << (float) acumVector.norm();
 
-            tw += acumVector;
+            targetw += acumVector;
 
             qDebug() << "    *  Vector target: ";
-            qDebug() << "x:" << tw.x() << " y:" << tw.y() << " modulo: " << tw.norm();
+            qDebug() << "x:" << targetw.x() << " y:" << targetw.y() << " modulo: " << targetw.norm();
 
-            goToTarget(tw);
+            goToTarget(targetw);
         }
     }
     catch (const Ice::Exception &e) {
