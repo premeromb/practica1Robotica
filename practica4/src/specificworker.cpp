@@ -1,21 +1,27 @@
 /*
- *    Copyright (C) 2020 by PABLO ROMERO MUÑOZ
- *
- *    This file is part of RoboComp
- *
- *    RoboComp is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
- *
- *    RoboComp is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
- */
+*    Copyright (C) 2020 by PABLO ROMERO MUÑOZ
+*
+*    This file is part of RoboComp
+*
+*    RoboComp is free software: you can redistribute it and/or modify
+        *    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    RoboComp is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+
+// NOTAS: evaluar frente hasta detectar obstáculo, si el giro es a derecha, hasta pasar el
+//      obstáculo solo evaluo parte izqueirda del laser, contrario si giro izquierda. Habrá
+//      que controlar cuando paro de evaluar un solo lado y vuelvo a mirar al frente.
 #include "specificworker.h"
 
 /**
@@ -46,91 +52,57 @@ void SpecificWorker::initialize(int period) {
     }
 }
 
+void SpecificWorker::readLaserObstacles() {
+    RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData();          // laserData read
+    std::sort(ldata.begin(), ldata.end(), [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
+    ldataObstacles.clear();
+    for (auto &p : ldata){                  // push on new list
+        if (p.dist > 1000)
+            break;
+        ldataObstacles.push_back(p);
+    }
+}
+
+void SpecificWorker::potentialFieldMethod(Eigen::Vector2f &acumVector) {
+    float operation = 1;
+
+    for (auto &p : ldataObstacles) {
+
+        operation = pow(1/(p.dist / 2000), 3);
+        qDebug() << "\n Valor de operation: " << operation << "\n";
+        if (operation > 50)
+            operation = 50;
+
+        Eigen::Vector2f tempVector(-((p.dist * sin(p.angle))/p.dist) * operation, -((p.dist * cos(p.angle))/p.dist) * operation);
+
+        acumVector += tempVector;           // Acum all forces
+    }
+}
 
 void SpecificWorker::compute() {
 
-    // Lectura laser
-    int op;
-    RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData();          // laserData read
-
-
-    //for(auto &l : ldata) qDebug() << l.angle << l.dist;
-    //for (auto &l : ldataWalls) qDebug() << l.angle << l.dist;
-
-    // std::terminate();
-    //sort laser data from small to large distances using a lambda function.
-    RoboCompLaser::TLaserData ldataAux;
-
-    std::sort(ldata.begin(), ldata.end(), [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
-
-    // excluir puntos de distancia menor
-
-    //si no hay ningun obstaculo la resultante será una recta hacia el target, ir metiendo uno a uno los obstaculso e ir  ajustando
-
-    // si hay alun mínimo en que se pare, poner aleatorio o que reucpere hacu atras
-
     // qgraficview y otro qtl, asignando origen, puedo pintar un circulo y represental los vectores para depurar, a modo de ejemplo pintar un robot y un laser
-
 
     RoboCompGenericBase::TBaseState bState;
     differentialrobot_proxy->getBaseState(bState);
+
 
     try {
         if (auto newTarget = tg.get(); newTarget.has_value()) {
             auto tw = newTarget.value();
 
-            RoboCompLaser::TLaserData ldataObstacles;     // new vector to avoid obstacles
-
-            for (auto &p : ldata){                  // push on new list
-                if (p.dist > 3000)
-                    break;
-                //else if (p.angle < 0.5 && p.angle > -0.5)
-                ldataObstacles.push_back(p);
-            }
-           //for(auto &l : ldataObstacles) qDebug() << l.angle << l.dist;
-
-           //std::terminate();
+            readLaserObstacles();
 
             Eigen::Vector2f acumVector(0, 0);          // Accumulate all force vectors
 
-            // por cada uno calcular unitario * 1/d² y sumar (restar) al del target
-            for (auto &p : ldataObstacles) {
-                // The same as before but in one line
-                //Eigen::Vector2f tempVector((-((p.dist * cos(p.angle))/p.dist) * 1/pow(p.dist, 2)), -((p.dist * sin(p.angle))/p.dist) * 1 / pow(p.dist, 2));
-
-                Eigen::Vector2f tempVector(p.dist * sin(p.angle), p.dist * cos(p.angle));          // Cortesian coordinates
-
-                tempVector.x() = -tempVector.x(); tempVector.y() = -tempVector.y();                      // Oposite direction
-
-                tempVector.x() = tempVector.x() / p.dist; tempVector.y() = tempVector.y() / p.dist;     // Module 1 vector
-
-                if (pow(1/(p.dist / 2000), 2) > 40){
-                    op = 40;
-                }
-                else
-                    op = pow(1/(p.dist / 2000), 2);
-
-                //qDebug() << "                                                        Op: " << op;
-
-                tempVector.x() = tempVector.x()* op ;           // Transformation to force
-                tempVector.y() = tempVector.y()* op;
-
-                // The same as before but in one line
-                //Eigen::Vector2f tempVector((-((p.dist * cos(p.angle))/p.dist) * 1/pow(p.dist, 2)), -((p.dist * sin(p.angle))/p.dist) * 1 / pow(p.dist, 2));
-                //qDebug() << "               Vector de desvío : ";
-                //qDebug() << "               x:" << tempVector.x() << " y:" << tempVector.y() << " modulo: " << (float)tempVector.norm();
-
-                //std::terminate();
-                //tempVector += tempVector;
-                acumVector += tempVector;           // Acum all forces
-            }
+            potentialFieldMethod(acumVector);
 
             qDebug() << "               Vector de desvío : ";
             qDebug() << "               x:" << acumVector.x() << " y:" << acumVector.y() << " modulo: " << (float)acumVector.norm();
 
-            tw += acumVector * 1.2;            // IS this??
+            tw += acumVector;            // IS this??
 
-            qDebug() << "    *  Vector target calculado: ";
+            qDebug() << "    *  Vector target: ";
             qDebug() << "x:" << tw.x() << " y:" << tw.y() << " modulo: " << tw.norm();
 
             //std::terminate();
@@ -144,15 +116,6 @@ void SpecificWorker::compute() {
             auto beta = atan2(tr.x(), tr.y());
             auto dist = tr.norm();          //distancia al objetivo
 
-        //lectura de laser
-
-        // si en el laser con angulo = beta, distancia al objetivo < distancia obstaculo,
-            // pa lante
-        // sino
-            // esquiva obstaculo
-
-
-
             qDebug() << "                 Distace to target. " << dist << " Beta: " << beta;
 
             if (dist < 50) {                     // On target
@@ -160,8 +123,8 @@ void SpecificWorker::compute() {
                 tg.setActiveFalse();
                 qDebug() << "\n           *** On target ***\n";
             } else {
-                auto vrot = MAX_TURN * beta * 0.8;
-                auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.1171472);      // lambda = (-0,5)/Ln(0,1)
+                auto vrot = std::min((MAX_TURN * beta), float(MAX_TURN));
+                auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.2171472);      // lambda = (-0,5)/Ln(0,1)
                 //auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.415291);       // lambda = (-0,5)/Ln(0,3)
                 //auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot * vrot) / 0.7213475);     // lambda = (-0,5)/Ln(0,5)
 
@@ -219,4 +182,3 @@ void SpecificWorker::RCISMousePicker_setPick(RoboCompRCISMousePicker::Pick myPic
 /**************************************/
 // From the RoboCompRCISMousePicker you can use this types:
 // RoboCompRCISMousePicker::Pick
-
