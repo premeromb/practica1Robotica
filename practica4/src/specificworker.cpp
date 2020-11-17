@@ -17,11 +17,10 @@
 *    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
 // NOTAS: evaluar frente hasta detectar obstáculo, si el giro es a derecha, hasta pasar el
 //      obstáculo solo evaluo parte izqueirda del laser, contrario si giro izquierda. Habrá
 //      que controlar cuando paro de evaluar un solo lado y vuelvo a mirar al frente.
+
 #include "specificworker.h"
 
 /**
@@ -54,9 +53,10 @@ void SpecificWorker::initialize(int period) {
 
 void SpecificWorker::readLaserObstacles() {
     RoboCompLaser::TLaserData ldata = laser_proxy->getLaserData();          // laserData read
-    std::sort(ldata.begin(), ldata.end(), [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
+    std::sort(ldata.begin(), ldata.end(),
+              [](RoboCompLaser::TData a, RoboCompLaser::TData b) { return a.dist < b.dist; });
     ldataObstacles.clear();
-    for (auto &p : ldata){                  // push on new list
+    for (auto &p : ldata) {                  // push on new list
         if (p.dist > 1000)
             break;
         ldataObstacles.push_back(p);
@@ -67,26 +67,48 @@ void SpecificWorker::potentialFieldMethod(Eigen::Vector2f &acumVector) {
     float operation = 1;
 
     for (auto &p : ldataObstacles) {
-
-        operation = pow(1/(p.dist / 2000), 3);
-        qDebug() << "\n Valor de operation: " << operation << "\n";
+        operation = pow(1 / (p.dist / 2000), 3);
         if (operation > 50)
             operation = 50;
-
-        Eigen::Vector2f tempVector(-((p.dist * sin(p.angle))/p.dist) * operation, -((p.dist * cos(p.angle))/p.dist) * operation);
-
+        Eigen::Vector2f tempVector(-((p.dist * sin(p.angle)) / p.dist) * operation,
+                                   -((p.dist * cos(p.angle)) / p.dist) * operation);
         acumVector += tempVector;           // Acum all forces
     }
 }
 
-void SpecificWorker::compute() {
-
-    // qgraficview y otro qtl, asignando origen, puedo pintar un circulo y represental los vectores para depurar, a modo de ejemplo pintar un robot y un laser
-
+void SpecificWorker::goToTarget(Eigen::Matrix<float, 2, 1> tw) {
     RoboCompGenericBase::TBaseState bState;
     differentialrobot_proxy->getBaseState(bState);
 
+    Eigen::Vector2f rw(bState.x, bState.z);
+    Eigen::Matrix2f rot;
 
+    rot << cos(bState.alpha), -sin(bState.alpha), sin(bState.alpha), cos(bState.alpha);
+
+    auto tr = rot * (tw - rw);
+    auto beta = atan2(tr.x(), tr.y());
+    auto dist = tr.norm();          //distancia al objetivo
+
+    qDebug() << "                 Distace to target. " << dist << " Beta: " << beta;
+
+    if (dist < 50) {                     // On target
+        differentialrobot_proxy->setSpeedBase(0, 0);        // Stop
+        tg.setActiveFalse();
+        qDebug() << "\n           *** On target ***\n";
+    } else {
+        auto vrot = std::min((MAX_TURN * beta), float(MAX_TURN));
+        // lambda = (-0,5)/Ln(0,1)
+        auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot * vrot) / 0.2171472);
+        // lambda = (-0,5)/Ln(0,3)
+        //auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.415291);
+        // lambda = (-0,5)/Ln(0,5)
+        //auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot * vrot) / 0.7213475);
+
+        differentialrobot_proxy->setSpeedBase(vadv, vrot);  // Go to target
+    }
+}
+
+void SpecificWorker::compute() {
     try {
         if (auto newTarget = tg.get(); newTarget.has_value()) {
             auto tw = newTarget.value();
@@ -98,38 +120,15 @@ void SpecificWorker::compute() {
             potentialFieldMethod(acumVector);
 
             qDebug() << "               Vector de desvío : ";
-            qDebug() << "               x:" << acumVector.x() << " y:" << acumVector.y() << " modulo: " << (float)acumVector.norm();
+            qDebug() << "               x:" << acumVector.x() << " y:" << acumVector.y() << " modulo: "
+                     << (float) acumVector.norm();
 
-            tw += acumVector;            // IS this??
+            tw += acumVector;
 
             qDebug() << "    *  Vector target: ";
             qDebug() << "x:" << tw.x() << " y:" << tw.y() << " modulo: " << tw.norm();
 
-            //std::terminate();
-
-            Eigen::Vector2f rw(bState.x, bState.z);
-            Eigen::Matrix2f rot;
-
-            rot << cos(bState.alpha), -sin(bState.alpha), sin(bState.alpha), cos(bState.alpha);
-
-            auto tr = rot * (tw - rw);
-            auto beta = atan2(tr.x(), tr.y());
-            auto dist = tr.norm();          //distancia al objetivo
-
-            qDebug() << "                 Distace to target. " << dist << " Beta: " << beta;
-
-            if (dist < 50) {                     // On target
-                differentialrobot_proxy->setSpeedBase(0, 0);        // Stop
-                tg.setActiveFalse();
-                qDebug() << "\n           *** On target ***\n";
-            } else {
-                auto vrot = std::min((MAX_TURN * beta), float(MAX_TURN));
-                auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.2171472);      // lambda = (-0,5)/Ln(0,1)
-                //auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot*vrot)/0.415291);       // lambda = (-0,5)/Ln(0,3)
-                //auto vadv = MAX_ADVANCE * std::min(dist / 500, float(1)) * exp(-(vrot * vrot) / 0.7213475);     // lambda = (-0,5)/Ln(0,5)
-
-                differentialrobot_proxy->setSpeedBase(vadv, vrot);  // Go to target
-            }
+            goToTarget(tw);
         }
     }
     catch (const Ice::Exception &e) {

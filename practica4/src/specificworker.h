@@ -50,14 +50,6 @@ public slots:
 
     void compute();
 
-    void readLaserObstacles();
-
-    //void obstacleInSight(double angle, float distance);
-
-    void potentialFieldMethod(Eigen::Vector2f &acumVector);
-
-    void goToTarget();
-
     int startup_check();
 
     void initialize(int period);
@@ -95,14 +87,18 @@ private:
     //T emporal target
     Target<Eigen::Vector2f> tg;
 
-    // End target
-    Target<Eigen::Vector2f> tg_end;
-
     std::shared_ptr<InnerModel> innerModel;
     bool startup_check_flag;
 
     RoboCompLaser::TLaserData ldataObstacles;
     bool flag_obstacle;
+
+    void readLaserObstacles();
+
+    void potentialFieldMethod(Eigen::Vector2f &acumVector);
+
+    void goToTarget(Eigen::Matrix<float, 2, 1> tw);
+
 };
 
 #endif
