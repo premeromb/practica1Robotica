@@ -75,7 +75,29 @@ bool SpecificWorker::checkTargetInsideLaserPolygon(QPointF point) {
     //    return true;
     //else
     //    return false;
+    return true;
+}
 
+int SpecificWorker::frontDist() {
+    float storeDistFront = 0;
+    for (long unsigned int i = 25; i <= 75; i++) {
+        storeDistFront += ldata.data()[i].dist;
+    }
+    return storeDistFront / 51;
+}
+
+void SpecificWorker::dontHitTheObstacle() {
+    int election [2] = {1, -1};
+
+    if (frontDist() < 150){
+        differentialrobot_proxy->setSpeedBase(-500, 0);
+        usleep(800000);
+        differentialrobot_proxy->setSpeedBase(20, MAX_TURN * election[(rand() % 2)]);
+        usleep(rand() % (100000 - 10000 + 1) + 100000);
+        differentialrobot_proxy->setSpeedBase(550, 0);
+        usleep(800000);
+
+    }
 }
 
 void SpecificWorker::potentialFieldMethod(Eigen::Vector2f &acumVector) {
@@ -132,6 +154,8 @@ void SpecificWorker::compute() {
             readLaserObstacles();
 
             Eigen::Vector2f acumVector(0, 0);          // Accumulate all force vectors
+
+            //dontHitTheObstacle();
 
             potentialFieldMethod(acumVector);
 

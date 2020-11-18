@@ -99,6 +99,10 @@ private:
 
     bool checkTargetInsideLaserPolygon(QPointF point);
 
+    int frontDist();
+
+    void dontHitTheObstacle();
+
     void potentialFieldMethod(Eigen::Vector2f &acumVector);
 
     void goToTarget(Eigen::Matrix<float, 2, 1> tw);
