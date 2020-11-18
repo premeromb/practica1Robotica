@@ -29,6 +29,10 @@
 
 #include <Eigen/Dense>
 
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QGraphicsItem>
+
 #include <innermodel/innermodel.h>
 
 const int MAX_ADVANCE = 1000;   // mm/s
@@ -90,8 +94,11 @@ private:
     std::shared_ptr<InnerModel> innerModel;
     bool startup_check_flag;
 
-    RoboCompLaser::TLaserData ldataObstacles;
     RoboCompLaser::TLaserData ldata;
+    RoboCompLaser::TLaserData ldataOrder;
+    RoboCompLaser::TLaserData ldataObstacles;
+
+    RoboCompGenericBase::TBaseState bState;
 
     bool flag_obstacle;
 
@@ -106,6 +113,18 @@ private:
     void potentialFieldMethod(Eigen::Vector2f &acumVector);
 
     void goToTarget(Eigen::Matrix<float, 2, 1> tw);
+
+
+    //draw
+    QGraphicsScene scene;
+    QGraphicsView *graphicsView;
+    QGraphicsItem *robot_polygon = nullptr;
+    QGraphicsItem *laser_polygon = nullptr;
+    const float ROBOT_LENGTH = 400;
+
+    void draw_things(const RoboCompGenericBase::TBaseState &bState, const RoboCompLaser::TLaserData &ldata, const Eigen::Vector2f &vector);
+    QGraphicsEllipseItem* result_vector;
+
 
 };
 

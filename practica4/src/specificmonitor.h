@@ -23,28 +23,21 @@
 
 /**
        \brief
-       @author Pablo Romero Muñoz
+       @author authorname
 */
-
-class SpecificMonitor : public GenericMonitor {
-Q_OBJECT
-
-private:
-
+class SpecificMonitor : public GenericMonitor
+{
+    Q_OBJECT
 
 public:
     SpecificMonitor(GenericWorker *_worker, Ice::CommunicatorPtr _communicator);
-
     ~SpecificMonitor();
 
-    void readConfig(RoboCompCommonBehavior::ParameterList &params);
-
+    void readConfig(RoboCompCommonBehavior::ParameterList &params );
     void run();
-
     void initialize();
 
     bool sendParamsToWorker(RoboCompCommonBehavior::ParameterList params);
-
     bool checkParams(RoboCompCommonBehavior::ParameterList l);
 
     bool ready;
