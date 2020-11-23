@@ -122,7 +122,9 @@ private:
     QGraphicsItem *laser_polygon = nullptr;
     const float ROBOT_LENGTH = 400;
 
-    void draw_things(const RoboCompGenericBase::TBaseState &bState, const RoboCompLaser::TLaserData &ldata, const Eigen::Vector2f &vector);
+    void draw_things();
+    void draw_vector(const Eigen::Vector2f &vector);
+    void draw_clean_vector();
     QGraphicsEllipseItem* result_vector;
 
 

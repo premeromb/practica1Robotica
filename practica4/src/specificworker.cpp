@@ -162,6 +162,7 @@ void SpecificWorker::potentialFieldMethod(Eigen::Vector2f &acumVector) {
                                        -((p.dist * cos(p.angle)) / p.dist) * operation);
             acumVector += tempVector;           // Acum all forces
         }
+        draw_vector(acumVector);
     //}
 }
 
@@ -184,6 +185,7 @@ void SpecificWorker::goToTarget(Eigen::Matrix<float, 2, 1> tw) {
         differentialrobot_proxy->setSpeedBase(0, 0);        // Stop
         tg.setActiveFalse();
         qDebug() << "\n           *** On target ***\n";
+        //draw_clean_vector();
     } else {
         auto vrot = std::min((MAX_TURN * beta), float(MAX_TURN));
         // lambda = (-0,5)/Ln(0,1)
@@ -195,7 +197,6 @@ void SpecificWorker::goToTarget(Eigen::Matrix<float, 2, 1> tw) {
 
         differentialrobot_proxy->setSpeedBase(vadv, vrot);  // Go to target
     }
-
 }
 
 void SpecificWorker::compute() {
@@ -206,23 +207,23 @@ void SpecificWorker::compute() {
 
         readLaserObstacles();
 
-        draw_things(bState, ldata, tw);
+        draw_things();
 
         if (auto newTarget = tg.get(); newTarget.has_value()) {
             auto targetw = newTarget.value();
 
-
             Eigen::Vector2f acumVector(0, 0);          // Accumulate all force vectors
 
-            //dontHitTheObstacle();
-
+            if (!checkTargetInsideLaserPolygon(QPoint(targetw.x(), targetw.y()))) {
+                qDebug() << "Target a la vista!";
+            }
             potentialFieldMethod(acumVector);
-
             qDebug() << "               Vector de desvío : ";
             qDebug() << "               x:" << acumVector.x() << " y:" << acumVector.y() << " modulo: "
                      << (float) acumVector.norm();
 
             targetw += acumVector;
+
 
             qDebug() << "    *  Vector target: ";
             qDebug() << "x:" << targetw.x() << " y:" << targetw.y() << " modulo: " << targetw.norm();
@@ -235,7 +236,7 @@ void SpecificWorker::compute() {
     }
 }
 
-void SpecificWorker::draw_things( const RoboCompGenericBase::TBaseState &bState, const RoboCompLaser::TLaserData &ldata, const Eigen::Vector2f &vector)
+void SpecificWorker::draw_things()
 {
     //draw robot
     //innerModel->updateTransformValues("base", bState.x, 0, bState.z, 0, bState.alpha, 0);
@@ -244,28 +245,26 @@ void SpecificWorker::draw_things( const RoboCompGenericBase::TBaseState &bState,
     graphicsView->resize(this->size());
 
     //draw laser
-    if (laser_polygon != nullptr)
-        scene.removeItem(laser_polygon);
-    QPolygonF poly;
-    for( auto &l : ldata)
-        poly << robot_polygon->mapToScene(QPointF(l.dist * sin(l.angle), l.dist * cos(l.angle)));
-    QColor color("LightGreen");
-    color.setAlpha(40);
-    laser_polygon = scene.addPolygon(poly, QPen(color), QBrush(color));
-    laser_polygon->setZValue(13);
+   if (laser_polygon != nullptr)
+       scene.removeItem(laser_polygon);
+   QPolygonF poly;
+   for( auto &l : ldata)
+       poly << robot_polygon->mapToScene(QPointF(l.dist * sin(l.angle), l.dist * cos(l.angle)));
+   QColor color("LightGreen");
+   color.setAlpha(40);
+   laser_polygon = scene.addPolygon(poly, QPen(color), QBrush(color));
+   laser_polygon->setZValue(13);
 
-    // draw future. Draw and arch going out from the robot
-    // remove existing arcs
-    if (result_vector != nullptr)
-        scene.removeItem(result_vector);
-
-    QColor col("Red");
-
-    QPointF centro = robot_polygon->mapToScene(vector.x(), vector.y());
-
-    result_vector = scene.addEllipse(centro.x(), centro.y(), 20, 20, QPen(col), QBrush(col));
 
 }
+
+void SpecificWorker::draw_vector(const Eigen::Vector2f &vector){
+
+    QColor col("Red");
+    QPointF centro = robot_polygon->mapToScene(vector.x(), vector.y());
+    result_vector = scene.addEllipse(centro.x(), centro.y(), 50, 50, QPen(col), QBrush(col));
+}
+
 
 int SpecificWorker::startup_check() {
     std::cout << "Startup check" << std::endl;
