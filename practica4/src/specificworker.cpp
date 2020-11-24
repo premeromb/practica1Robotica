@@ -162,7 +162,6 @@ void SpecificWorker::potentialFieldMethod(Eigen::Vector2f &acumVector) {
                                        -((p.dist * cos(p.angle)) / p.dist) * operation);
             acumVector += tempVector;           // Acum all forces
         }
-        draw_vector(acumVector);
     //}
 }
 
@@ -178,8 +177,6 @@ void SpecificWorker::goToTarget(Eigen::Matrix<float, 2, 1> tw) {
     auto dist = tr.norm();          //distancia al objetivo
 
     qDebug() << "                 Distace to target. " << dist << " Beta: " << beta;
-
-
 
     if (dist < 50) {                     // On target
         differentialrobot_proxy->setSpeedBase(0, 0);        // Stop
@@ -214,16 +211,17 @@ void SpecificWorker::compute() {
 
             Eigen::Vector2f acumVector(0, 0);          // Accumulate all force vectors
 
-            if (!checkTargetInsideLaserPolygon(QPoint(targetw.x(), targetw.y()))) {
-                qDebug() << "Target a la vista!";
-            }
+            //if (!checkTargetInsideLaserPolygon(QPoint(targetw.x(), targetw.y()))) {
+            //    qDebug() << "Target a la vista!";
+            //}
             potentialFieldMethod(acumVector);
             qDebug() << "               Vector de desvío : ";
             qDebug() << "               x:" << acumVector.x() << " y:" << acumVector.y() << " modulo: "
                      << (float) acumVector.norm();
 
             targetw += acumVector;
-
+            draw_vector(acumVector, 1);
+            //draw_vector(targetw, 2);
 
             qDebug() << "    *  Vector target: ";
             qDebug() << "x:" << targetw.x() << " y:" << targetw.y() << " modulo: " << targetw.norm();
@@ -258,11 +256,13 @@ void SpecificWorker::draw_things()
 
 }
 
-void SpecificWorker::draw_vector(const Eigen::Vector2f &vector){
+void SpecificWorker::draw_vector(const Eigen::Vector2f &vector, int option){
+    string colour = "Red";
+    if (option == 1)
+        colour = "Blue";
 
-    QColor col("Red");
     QPointF centro = robot_polygon->mapToScene(vector.x(), vector.y());
-    result_vector = scene.addEllipse(centro.x(), centro.y(), 50, 50, QPen(col), QBrush(col));
+    result_vector = scene.addEllipse(centro.x(), centro.y(), 50, 50, QPen(colour.c_str()), QBrush(colour.c_str()));
 }
 
 
