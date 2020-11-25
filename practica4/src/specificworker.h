@@ -123,7 +123,7 @@ private:
     const float ROBOT_LENGTH = 400;
 
     void draw_things();
-    void draw_vector(const Eigen::Vector2f &vector);
+    void draw_vector(const Eigen::Vector2f &vector, int option);
     void draw_clean_vector();
     QGraphicsEllipseItem* result_vector;
 
