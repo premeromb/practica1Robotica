@@ -46,7 +46,7 @@ class SpecificWorker : public GenericWorker {
         bool activate = false;
         bool empty = true;
 
-        void put(const T &Data) {
+        void put(const T &&Data) {
             std::lock_guard<std::mutex> guard(mutex);
             data = Data;
             activate = true;
@@ -100,6 +100,9 @@ private:
     std::vector<tupla> ordenar(std::vector<tupla> vector, float x, float z);
     std::vector<tupla> obstaculos(std::vector<tupla> vector, float aph,const RoboCompLaser::TLaserData &ldata);
     void dynamicWindowApproach(RoboCompGenericBase::TBaseState bState, RoboCompLaser::TLaserData &ldata);
+
+    //e5
+    void calculateNavigationGrid();
 
     //draw
     QGraphicsScene scene;

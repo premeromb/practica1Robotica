@@ -25,8 +25,6 @@
 
 using namespace std;
 
-const float landa = -0.5 / log(0.1);
-
 /**
 * \brief Default constructor
 */
@@ -109,9 +107,9 @@ void SpecificWorker::initialize(int period)
         timer.start(Period);
     }
 
-    grid.set_Value(200,200, true);
-    grid.set_Value(500,-200, true);
-    grid.set_Value(-400,200, true);
+    grid.set_Ocupied(200,200, true);
+    grid.set_Ocupied(500,-200, true);
+    grid.set_Ocupied(-400,200, true);
 }
 
 
@@ -119,6 +117,7 @@ void SpecificWorker::compute()
 {
     //Coordenadas del robot
     RoboCompGenericBase::TBaseState bState;
+
     try { differentialrobot_proxy->getBaseState(bState); }
     catch (const Ice::Exception &e) { std::cout << e.what() << std::endl; }
 
@@ -126,10 +125,12 @@ void SpecificWorker::compute()
     try { ldata = laser_proxy->getLaserData(); }
     catch (const Ice::Exception &e) { std::cout << e.what() << std::endl; }
 
-    if (auto data = target_buffer.get(); data.has_value())
+    if (auto newTarget = target_buffer.get(); newTarget.has_value())
     {
-        target = data.value();
+        target = newTarget.value();
+
         // calcular la función de navegación
+        calculateNavigationGrid();
         //desde el target, avanzar con un fuego
     }
     if( target_buffer.is_active())
@@ -142,6 +143,16 @@ void SpecificWorker::compute()
  }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void SpecificWorker::calculateNavigationGrid() {
+
+    auto[x, y] = grid.worldToGrid(-2600, 2490);
+    qDebug() << "Posiciones grid " << x << " " << y;
+    auto[i, j] = grid.gridToWorld(x, y);
+    qDebug() << "Posiciones world " << i << " " << j;
+
+
+}
 
 
 void SpecificWorker::dynamicWindowApproach(RoboCompGenericBase::TBaseState bState, RoboCompLaser::TLaserData &ldata) {
@@ -253,7 +264,10 @@ void
 
         QPointF center = robot_polygon->mapToScene(std::get<0>(front), std::get<1>(front));
         arcs_vector.push_back(scene.addEllipse(center.x(), center.y(), 80, 80, QPen(Qt::black), QBrush(Qt::black)));
-    }
+
+
+
+}
 
 
 /**
