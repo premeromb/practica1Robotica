@@ -27,6 +27,7 @@ public:
         this->hminGrid = hmin;
         this->widthGrid = width;
         this->tileGrid = tile;
+
         operators.push_back(std::make_tuple(1,0));
         operators.push_back(std::make_tuple(0,1));
         operators.push_back(std::make_tuple(-1,0));
@@ -56,12 +57,16 @@ public:
 
     bool isOccupied(int x, int z) {
         auto[i, j] = worldToGrid(x, z);
-        return array[x, z].occuped;
+        return this->array[i][j].occupied;
     }
 
-    bool distanceIsUpdated(int x, int z) {
+    bool isInRange(int x, int z){
+        return (x >= 0 && z >= 0 && x < 50 && z < 50);
+    }
+
+    bool isDistanceUpdated(int x, int z) {
         auto[i, j] = worldToGrid(x, z);
-        return array[x, z].dist > 0;
+        return array[i][j].dist > 0;;
     }
 
     int get_dist(int x, int z) {
@@ -101,9 +106,9 @@ public:
         std::vector<std::tuple<int,int>> neighbors;
         auto[i, j] = worldToGrid(x, z);
         for (auto &[k,l] : operators){
-            std::tuple<int,int> auxTuple(i+k, j+l);
-            if(!isOccupied(auxTuple) && !distanceIsUpdated(auxTuple)) {//TODO Chechk if is in correct range
-                neighbors.push_back(auxTuple);
+            int auxI = i+k; int auxJ = j+l;
+            if(!isOccupied(auxI, auxJ) && !isDistanceUpdated(auxI, auxJ) && isInRange(auxI, auxJ)){
+                neighbors.push_back(gridToWorld(auxI, auxJ));
             }
         }
         return neighbors;

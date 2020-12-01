@@ -107,9 +107,9 @@ void SpecificWorker::initialize(int period)
         timer.start(Period);
     }
 
-    grid.set_Ocupied(200,200, true);
-    grid.set_Ocupied(500,-200, true);
-    grid.set_Ocupied(-400,200, true);
+   // grid.set_Ocupied(200,200, true);
+   // grid.set_Ocupied(500,-200, true);
+   // grid.set_Ocupied(-400,200, true);
 }
 
 
@@ -146,12 +146,18 @@ void SpecificWorker::compute()
 
 void SpecificWorker::calculateNavigationGrid() {
 
-    auto[x, y] = grid.worldToGrid(-2600, 2490);
-    qDebug() << "Posiciones grid " << x << " " << y;
-    auto[i, j] = grid.gridToWorld(x, y);
-    qDebug() << "Posiciones world " << i << " " << j;
+    auto[x, y, z] = target;
+    // Get target's neighbors
+    qDebug() << "-------------  TARGET ON " << x << "," << z;
+    auto neighborsVector = grid.getNeighbors(x, z);
 
+    for (auto [j, k] : neighborsVector){
+        qDebug() << "---------------- Vecino: " << j << "," << k;
+        grid.set_Ocupied(j, k,true);
+    }
 
+    //mientras no haya terminado
+        // por cada vecino, poner su distancia, buscar sus vecinos, sacarlo de la lista
 }
 
 
