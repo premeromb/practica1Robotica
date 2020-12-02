@@ -55,6 +55,7 @@ class SpecificWorker : public GenericWorker {
         std::optional<T> get() {
             std::lock_guard<std::mutex> guard(mutex);
             if (not empty){
+                empty = true;
                 return data;
             } else
                 return {};
@@ -103,6 +104,7 @@ private:
 
     //e5
     void calculateNavigationGrid();
+    void fill_grid_with_obstacles();
 
     //draw
     QGraphicsScene scene;

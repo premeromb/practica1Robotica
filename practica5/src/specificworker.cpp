@@ -107,9 +107,49 @@ void SpecificWorker::initialize(int period)
         timer.start(Period);
     }
 
+    fill_grid_with_obstacles();
+
    // grid.set_Ocupied(200,200, true);
    // grid.set_Ocupied(500,-200, true);
    // grid.set_Ocupied(-400,200, true);
+}
+
+
+void SpecificWorker::fill_grid_with_obstacles() {
+
+    for (int i = -2500; i < 2500; i++){
+        grid.set_Ocupied(i, 2400, true);
+    }
+    for (int i = -2500; i < 2500; i++){
+        grid.set_Ocupied(2400, i, true);
+    }
+    for (int i = -2500; i < 2500; i++){
+        grid.set_Ocupied(i , -2500, true);
+    }
+    for (int i = -2500; i < 2500; i++){
+        grid.set_Ocupied(-2500, i, true);
+    }
+
+    for (int i = 1; i < 10; i++)  //max number of boxes
+    {
+        auto caja = "caja" + QString::number(i);
+        auto node = innerModel->getNode(caja);
+        auto mesh = innerModel->getNode("cajaMesh" + QString::number(i));
+        if (node and mesh) {
+            auto pose = innerModel->transform("world", caja);
+            auto plane = dynamic_cast<InnerModelPlane *>(mesh);
+            int x = pose.x();
+            int z = pose.z();
+            int width = plane->depth;
+            int depth = plane->width;
+
+            for (int i = x-width/2; i < x + width / 2; i++) {
+                for (int j = z - depth/2; j < z + depth/2; j++) {
+                    grid.set_Ocupied(i, j, true);
+                }
+            }
+        }
+    }
 }
 
 
@@ -146,18 +186,18 @@ void SpecificWorker::compute()
 
 void SpecificWorker::calculateNavigationGrid() {
 
-    auto[x, y, z] = target;
-    // Get target's neighbors
-    qDebug() << "-------------  TARGET ON " << x << "," << z;
-    auto neighborsVector = grid.getNeighbors(x, z);
+  // auto[x, y, z] = target;
+  // // Get target's neighbors
+  // qDebug() << "-------------  TARGET ON " << x << "," << z;
+  // //auto neighborsVector = grid.getNeighbors(x, z);
 
-    for (auto [j, k] : neighborsVector){
-        qDebug() << "---------------- Vecino: " << j << "," << k;
-        grid.set_Ocupied(j, k,true);
-    }
+  // for (auto [j, k] : neighborsVector){
+  //     qDebug() << "---------------- Vecino: " << j << "," << k;
+  //     grid.set_Ocupied(j, k,true);
+  // }
 
-    //mientras no haya terminado
-        // por cada vecino, poner su distancia, buscar sus vecinos, sacarlo de la lista
+  // //mientras no haya terminado
+  //     // por cada vecino, poner su distancia, buscar sus vecinos, sacarlo de la lista
 }
 
 
@@ -171,7 +211,6 @@ void SpecificWorker::dynamicWindowApproach(RoboCompGenericBase::TBaseState bStat
     {
         differentialrobot_proxy->setSpeedBase(0, 0);
         target_buffer.set_task_finished();
-        std::cout << __FUNCTION__ << " At target" << std::endl;
         return;
     }
     else
