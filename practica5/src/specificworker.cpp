@@ -180,24 +180,22 @@ void SpecificWorker::compute()
         //llamar a DWA con ese punto
     }
     dynamicWindowApproach(bState, ldata);
- }
+}
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SpecificWorker::calculateNavigationGrid() {
 
-  // auto[x, y, z] = target;
-  // // Get target's neighbors
-  // qDebug() << "-------------  TARGET ON " << x << "," << z;
-  // //auto neighborsVector = grid.getNeighbors(x, z);
-
-  // for (auto [j, k] : neighborsVector){
-  //     qDebug() << "---------------- Vecino: " << j << "," << k;
-  //     grid.set_Ocupied(j, k,true);
-  // }
-
-  // //mientras no haya terminado
-  //     // por cada vecino, poner su distancia, buscar sus vecinos, sacarlo de la lista
+    auto[x, y, z] = target;
+    // Get target's neighbors
+    qDebug() << "-------------  TARGET ON " << x << "," << z;
+    auto neighborsVector = grid.getNeighbors(x, z, 1);
+    for (auto v : neighborsVector) {
+        qDebug() << "---------------- Vecino: " << v.cx << "," << v.cy;
+        grid.set_dist(v.cx, v.cy, 1);
+    }
+//mientras no haya terminado
+    // por cada vecino, poner su distancia, buscar sus vecinos, sacarlo de la lista
 }
 
 

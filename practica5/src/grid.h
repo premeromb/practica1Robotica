@@ -12,7 +12,7 @@ template<typename HMIN, HMIN hmin, typename WIDTH, WIDTH width, typename TILE, T
 class Grid {
 
     int hminGrid, widthGrid, tileGrid;
-    std::vector<std::tuple<int,int>> operators{{-1,-1}, {0,-1},{-1,-1},{-1,0},{1,0},{-1,-1}, {0,-1},{-1,-1}};
+    std::vector<std::tuple<int,int>> operators{{0,1}, {0,-1},{1,0},{-1,0},{1,1},{-1,-1}, {1,-1},{-1,1}};
 public:
     Grid() {
         array.resize((int) (width / tile));
@@ -60,11 +60,12 @@ public:
     }
 
 
+
 public:
 
     bool isOccupied(int x, int z) {
         //auto[i, j] = worldToGrid(x, z);
-        return this->array[i][j].occupied;
+        return this->array[x][z].occupied;
     }
 
     bool isInRange(int x, int z){
@@ -72,8 +73,8 @@ public:
     }
 
     bool isDistanceUpdated(int x, int z) {
-        auto[i, j] = worldToGrid(x, z);
-        return array[i][j].dist > 0;;
+        //auto[i, j] = worldToGrid(x, z);
+        return array[x][z].dist > -1;;
     }
 
     int get_dist(int x, int z) {
@@ -85,13 +86,11 @@ public:
     }
 
     void set_Ocupied(int x, int z, bool v) {
-        if (auto r = worldToGrid(x,z); r.has_value()) {
-            auto[i, j] = r.value();
-            array[i][j].occupied = v;
-            if (v)
-                array[i][j].paint_cell->setBrush(QColor("Red"));
+        auto[i, j] = worldToGrid(x, z);
+        array[i][j].occupied = v;
+        if (v)
+            array[i][j].paint_cell->setBrush(QColor("Red"));
 
-        }
     }
 
     //QString::number(distancia);
@@ -99,16 +98,15 @@ public:
     void set_dist(int x, int z, int dist) {
         auto[i, j] = worldToGrid(x, z);
         array[i][j].dist = dist;
+        if (dist > 0)
+            array[i][j].paint_cell->setBrush(QColor("LighBlue"));
+
     }
 
-    // From world -2500->2500 to array 0->5000
-    std::optional <std::tuple<int, int>> worldToGrid(int x, int z) {
+    std::tuple<int, int> worldToGrid(int x, int z) {
         int k = x / tileGrid + (widthGrid / tileGrid) / 2;
         int l = z / tileGrid + (widthGrid / tileGrid) / 2;
-        if (isInRange(k, l))
-            return std::make_tuple(k, l);
-        else
-            return {};
+        return std::make_tuple(k, l);
     }
 
     std::tuple<int, int> gridToWorld(int k, int l) {
@@ -117,19 +115,18 @@ public:
         return std::make_tuple(x, z);
     }
 
-  //std::vector<Value> getNeighbors(int x, int z, int dist){
-  //    std::vector<Value> neighbors;
-  //    auto[i, j] = worldToGrid(x, z);
-  //    for (auto &[dk,dl] : operators){
-
-  //        int auxI = i+dk; int auxJ = j+dl;
-  //        if(isInRangeG(auxI, auxJ) and not array(auxI, auxJ).occupied and array(auxI, auxJ).distance > -1){
-  //            array(auxI, auxJ).dist = dist;
-  //            neighbors.push_back(array(auxI, auxJ));
-  //        }
-  //    }
-  //    return neighbors;
-  //}
+  std::vector<Value> getNeighbors(int x, int z, int dist){
+      std::vector<Value> neighbors;
+      auto[i, j] = worldToGrid(x, z);
+      for (auto &[dk,dl] : operators){
+         int auxI = i+dk; int auxJ = j+dl;
+          if(isInRange(auxI, auxJ) and not isOccupied(auxI, auxJ) and not isDistanceUpdated(auxI, auxJ)){
+              set_dist(auxI, auxJ, dist);
+              neighbors.push_back(array[auxI][auxJ]);
+          }
+      }
+      return neighbors;
+  }
 
 };
 
