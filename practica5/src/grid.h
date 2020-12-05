@@ -12,7 +12,14 @@ template<typename HMIN, HMIN hmin, typename WIDTH, WIDTH width, typename TILE, T
 class Grid {
 
     int hminGrid, widthGrid, tileGrid;
-    std::vector<std::tuple<int,int>> operators{{0,1}, {0,-1},{1,0},{-1,0},{1,1},{-1,-1}, {1,-1},{-1,1}};
+    std::vector<std::tuple<int, int>> operators{{0,  1},
+                                                {0,  -1},
+                                                {1,  0},
+                                                {-1, 0},
+                                                {1,  1},
+                                                {-1, -1},
+                                                {1,  -1},
+                                                {-1, 1}};
 public:
     Grid() {
         array.resize((int) (width / tile));
@@ -47,86 +54,128 @@ public:
                 elem.paint_cell = scene.addRect(-tile / 2, -tile / 2, tile, tile, QPen(QColor("Darkgreen")),
                                                 QBrush(QColor("Lightgreen")));
                 elem.paint_cell->setPos(elem.cx, elem.cy);
-
                 QFont f("times", tile * 0.7);
-                elem.text_cell = scene.addSimpleText("-2", f);
-                //QFontMetricsF fm(myText->font());
-
-                elem.text_cell->setPos(elem.cx - tile/2, elem.cy - tile/2 );
-                // elem.text_cell->setFlag(QGraphicsItem::ItemIgnoresTransformations);
-                elem.text_cell->setZValue(15);
-
+                elem.text_cell = scene.addSimpleText(" ", f);
+                elem.text_cell->setPos(elem.cx - tile / 2, elem.cy - tile / 2);
             }
     }
 
-
+    void update_graphic_distances(QGraphicsScene &scene) {
+        for (auto &row : array)
+            for (auto &elem : row) {
+                elem.paint_cell->setPos(elem.cx, elem.cy);
+                QFont f("times", tile * 0.6);
+                elem.text_cell = scene.addSimpleText(QString::number(get_dist_world(elem.cx, elem.cy)), f);
+                elem.text_cell->setPos(elem.cx - tile / 2, elem.cy - tile / 2);
+            }
+    }
 
 public:
 
-    bool isOccupied(int x, int z) {
-        //auto[i, j] = worldToGrid(x, z);
-        return this->array[x][z].occupied;
+    bool is_occupied(int i, int j) {
+        return this->array[i][j].occupied;
     }
 
-    bool isInRange(int x, int z){
-        return (x >= 0 && z >= 0 && x < 50 && z < 50);
+    bool is_in_range(int i, int j) {
+        return (i >= 0 && j >= 0 && i < 50 && j < 50);
     }
 
-    bool isDistanceUpdated(int x, int z) {
-        //auto[i, j] = worldToGrid(x, z);
-        return array[x][z].dist > -1;;
+    bool is_distance_updated(int i, int j) {
+        return array[i][j].dist > -1;;
     }
 
-    int get_dist(int x, int z) {
-        if (isOccupied(x, z)) {
-            auto[i, j] = worldToGrid(x, z);
-            return this->array[x][z].dist;
+    int get_dist_world(int x, int z) {
+        auto[i, j] = world_to_grid(x, z);
+        if (not is_occupied(i, j)) {
+            return this->array[i][j].dist;
         }
         return -1;
     }
 
-    void set_Ocupied(int x, int z, bool v) {
-        auto[i, j] = worldToGrid(x, z);
+    int get_dist(int i, int j) {
+        if (not is_occupied(i, j)) {
+            return this->array[i][j].dist;
+        }
+        return -1;
+    }
+    void set_ocupied_world(int x, int z, bool v) {
+        auto[i, j] = world_to_grid(x, z);
+        set_ocupied(i, j, v);
+    }
+
+    void set_ocupied(int i, int j, bool v) {
         array[i][j].occupied = v;
         if (v)
             array[i][j].paint_cell->setBrush(QColor("Red"));
-
     }
 
-    //QString::number(distancia);
+    void set_target(int i , int j){
+        array[i][j].dist = 0;
+        array[i][j].paint_cell->setBrush(QColor("Gray"));
+    }
 
-    void set_dist(int x, int z, int dist) {
-        auto[i, j] = worldToGrid(x, z);
+    void set_dist(int i, int j, int dist) {
         array[i][j].dist = dist;
         if (dist > 0)
-            array[i][j].paint_cell->setBrush(QColor("LighBlue"));
-
+            array[i][j].paint_cell->setBrush(QColor("Yellow"));
     }
 
-    std::tuple<int, int> worldToGrid(int x, int z) {
-        int k = x / tileGrid + (widthGrid / tileGrid) / 2;
-        int l = z / tileGrid + (widthGrid / tileGrid) / 2;
+    std::tuple<int, int> world_to_grid(int i, int j) {
+        int k = i / tileGrid + (widthGrid / tileGrid) / 2;
+        int l = j / tileGrid + (widthGrid / tileGrid) / 2;
         return std::make_tuple(k, l);
     }
 
-    std::tuple<int, int> gridToWorld(int k, int l) {
+    std::tuple<int, int> grid_to_world(int k, int l) {
         int x = k * tileGrid - widthGrid / 2;
         int z = l * tileGrid - widthGrid / 2;
         return std::make_tuple(x, z);
     }
 
-  std::vector<Value> getNeighbors(int x, int z, int dist){
-      std::vector<Value> neighbors;
-      auto[i, j] = worldToGrid(x, z);
-      for (auto &[dk,dl] : operators){
-         int auxI = i+dk; int auxJ = j+dl;
-          if(isInRange(auxI, auxJ) and not isOccupied(auxI, auxJ) and not isDistanceUpdated(auxI, auxJ)){
-              set_dist(auxI, auxJ, dist);
-              neighbors.push_back(array[auxI][auxJ]);
-          }
-      }
-      return neighbors;
-  }
+    std::vector<Value> get_neighbors_and_set_distance(int i, int j, int dist) {
+        std::vector<Value> neighbors;
+        qDebug() << "                   On get_neighbors with i: " << i << " j: " << j;
+        for (auto &[dk, dl] : operators) {
+            int auxI = i + dk;
+            int auxJ = j + dl;
+            if (is_in_range(auxI, auxJ) and not is_occupied(auxI, auxJ) and not is_distance_updated(auxI, auxJ)) {
+                qDebug() << "                   Add new neighbor i: " << auxI << " j: " << auxJ;
+                set_dist(auxI, auxJ, dist);
+                neighbors.push_back(array[auxI][auxJ]);
+            }
+        }
+        return neighbors;
+    }
+
+    void calculate_navigation_grid(int x, int z) {
+
+        auto[i, j] = world_to_grid(x, z);
+
+        set_target(i, j);
+
+        int distance = 1;
+        std::vector<Value> L1 = get_neighbors_and_set_distance(i, j, distance);
+        std::vector<Value> L2 = {};
+        distance++;
+
+        bool end = false;
+
+        while (not end) {
+
+            for (auto current_cell : L1) {
+                auto [L1_i, L1_j] = world_to_grid(current_cell.cx, current_cell.cy);
+                auto current_cell_neighbors = get_neighbors_and_set_distance(L1_i, L1_j, distance);
+                for (auto current_neighbor : current_cell_neighbors)
+                    L2.push_back(current_neighbor);
+            }
+            distance ++;
+            if(L2.empty())
+                end = true;
+            L1.swap(L2);
+            L2.clear();
+
+        }
+    }
 
 };
 
