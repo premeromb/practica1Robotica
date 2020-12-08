@@ -1,5 +1,5 @@
 /*
- *    Copyright (C) 2020 by jvallero & mtorocom
+ *    Copyright (C) 2020 by jvallero & mtorocom & GR10X2
  *
  *    This file is part of RoboComp
  *
@@ -118,6 +118,7 @@ private:
     //void calculate_navigation_grid();
 
     void fill_grid_with_obstacles();
+
     void fill_grid_with_walls();
 
     //draw
