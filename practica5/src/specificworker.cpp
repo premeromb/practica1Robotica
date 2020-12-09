@@ -217,10 +217,10 @@ void SpecificWorker::dynamic_window_approach(RoboCompGenericBase::TBaseState bSt
         std::vector<tupla> vectorSInObs = obstaculos(vectorPuntos, bState.alpha, ldata);
 
         //ordenamos el vector de puntos segun la distancia
-        std::vector<tupla> vectorOrdenado = ordenar(vectorSInObs, tr.x(), tr.y());
+        auto vectorOrdenado = ordenar(vectorSInObs, tr.x(), tr.y());
 
-        if (vectorOrdenado.size() > 0) {
-            auto[x, y, v, w, alpha] = vectorOrdenado.front();
+        if (vectorOrdenado.has_value()) {
+            auto[x, y, v, w, alpha] = vectorOrdenado.value();
             std::cout << __FUNCTION__ << " " << x << " " << y << " " << v << " " << w << " " << alpha
                       << std::endl;
             if (w > M_PI) w = M_PI;
@@ -228,7 +228,7 @@ void SpecificWorker::dynamic_window_approach(RoboCompGenericBase::TBaseState bSt
             if (v < 0) v = 0;
             try { differentialrobot_proxy->setSpeedBase(std::min(v / 5, 1000.f), w); }
             catch (const Ice::Exception &e) { std::cout << e.what() << std::endl; }
-            draw_things(bState, ldata, vectorOrdenado, vectorOrdenado.front());
+            draw_things(bState, ldata, vectorSInObs, vectorOrdenado.value());
         } else {
             std::cout << "Vector vacio" << std::endl;
             return;
@@ -390,14 +390,31 @@ SpecificWorker::obstaculos(std::vector<tupla> vector, float aph, const RoboCompL
  * @param z
  * @return vector ordenado
  */
-std::vector<SpecificWorker::tupla> SpecificWorker::ordenar(std::vector<tupla> vector, float x, float z) {
-    std::sort(vector.begin(), vector.end(), [x, z](const auto &a, const auto &b) {
-        const auto &[ax, ay, ca, cw, aa] = a;
-        const auto &[bx, by, ba, bw, bb] = b;
-        return ((ax - x) * (ax - x) + (ay - z) * (ay - z)) < ((bx - x) * (bx - x) + (by - z) * (by - z));
-    });
 
-    return vector;
+
+std::optional<SpecificWorker::tupla> SpecificWorker::ordenar(std::vector<tupla> vector, float x, float z) {
+
+    const float A = 1;
+    const float B = 0.1;
+
+    std::vector<std::tuple<float, tupla>> L;
+
+    for (auto p : vector) {
+
+
+        auto [i, j, vAvance, vgiro, alpha] = p;
+        float a = grid.get_dist_world(i, j);
+        float b = sqrt(pow(i - x , 2) + pow(j - z, 2));
+
+        L.push_back(std::make_tuple(A * a + B * b, p));
+
+    }
+    auto m = std::min_element(L.begin(), L.end(), [](auto &a, auto &b){return std::get<0>(a) < std::get<0>(b);});
+
+    if (m != L.end())
+       return std::get<tupla>(*m);
+    else
+        return {};
 }
 
 ///////////___________________________________///////////////

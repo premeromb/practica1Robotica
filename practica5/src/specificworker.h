@@ -108,7 +108,7 @@ private:
     //e4
     std::vector<tupla> calcular_puntos(float vOrigen, float wOrigen);
 
-    std::vector<tupla> ordenar(std::vector<tupla> vector, float x, float z);
+    std::optional<tupla> ordenar(std::vector<tupla> vector, float x, float z);
 
     std::vector<tupla> obstaculos(std::vector<tupla> vector, float aph, const RoboCompLaser::TLaserData &ldata);
 
