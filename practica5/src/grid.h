@@ -40,7 +40,7 @@ public:
     struct Value {
         bool occupied = false;
         QGraphicsRectItem *paint_cell = nullptr;
-        QGraphicsTextItem *text_cell = nullptr;
+        QGraphicsSimpleTextItem *text_cell = nullptr;
         int cx, cy;
         int dist = -1; //dist vecinos
     };
@@ -58,10 +58,7 @@ public:
                 elem.paint_cell = scene.addRect(-tile / 2, -tile / 2, tile, tile, QPen(QColor("Darkgreen")),
                                                 QBrush(fondo));
                 elem.paint_cell->setPos(elem.cx, elem.cy);
-                if (get_dist_world(elem.cx, elem.cy) < 0)
-                    elem.text_cell = scene.addText(" ", font);
-                else
-                    elem.text_cell = scene.addText(QString::number(get_dist_world(elem.cx, elem.cy)), font);
+                elem.text_cell = scene.addSimpleText(" ", font);
                 elem.text_cell->setPos(elem.cx - tile / 2, elem.cy - tile / 2);
                 // Get the current transform
                 QTransform transform(elem.text_cell->transform());
@@ -164,13 +161,15 @@ public:
         return is_in_range(i, j) and not is_occupied(i, j) and not is_distance_updated(i, j);
     }
 
-    std::vector<Value> get_neighbors(int i, int j) {
+    std::vector<Value> get_neighbors_set_dist_draw(int i, int j, int distance) {
         std::vector<Value> neighbors;
         for (auto &[dk, dl] : operators) {
             int auxI = i + dk;
             int auxJ = j + dl;
             if (isValidNeighbor(auxI, auxJ)) {
                 neighbors.push_back(array[auxI][auxJ]);
+                set_dist(auxI, auxJ, distance);
+                array[auxI][auxJ].text_cell->setText(QString::number(distance));
             }
         }
         return neighbors;
@@ -190,7 +189,7 @@ public:
             qDebug() << " pasa por el for";
             if (neighbor.dist < short_neighbor.dist)
                 qDebug() << " entra en el if";
-                short_neighbor = neighbor;
+            short_neighbor = neighbor;
         }
         qDebug() << "sale de get short neighbor ********************* ";
         return short_neighbor;
@@ -202,7 +201,7 @@ public:
         set_target(i, j);
 
         int distance = 1;
-        std::vector<Value> L1 = get_neighbors(i, j);
+        std::vector<Value> L1 = get_neighbors_set_dist_draw(i, j, distance);
         set_neighbors_dist(L1, distance);
         std::vector<Value> L2 = {};
         distance++;
@@ -211,7 +210,7 @@ public:
         while (not end) {
             for (auto current_cell : L1) {
                 auto[L1_i, L1_j] = world_to_grid(current_cell.cx, current_cell.cy);
-                auto current_cell_neighbors = get_neighbors(L1_i, L1_j);
+                auto current_cell_neighbors = get_neighbors_set_dist_draw(L1_i, L1_j, distance);
                 set_neighbors_dist(current_cell_neighbors, distance);
                 for (auto current_neighbor : current_cell_neighbors)
                     L2.push_back(current_neighbor);
