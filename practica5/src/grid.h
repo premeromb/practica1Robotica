@@ -166,12 +166,10 @@ public:
 
     std::vector<Value> get_neighbors(int i, int j) {
         std::vector<Value> neighbors;
-        qDebug() << "                   On get_neighbors with i: " << i << " j: " << j;
         for (auto &[dk, dl] : operators) {
             int auxI = i + dk;
             int auxJ = j + dl;
             if (isValidNeighbor(auxI, auxJ)) {
-                qDebug() << "                   Add new neighbor i: " << auxI << " j: " << auxJ;
                 neighbors.push_back(array[auxI][auxJ]);
             }
         }
@@ -179,12 +177,19 @@ public:
     }
 
     Value get_short_neighbor(int x, int z) {
-        qDebug() << "get short neighbor ********************* ";
+        qDebug() << "get short neighbor ********************* con x: " << x << " z: " << z;
+
         auto[i, j] = world_to_grid(x, z);
+        qDebug() << "             transformadas a i: " << i << " j: " << j;
         std::vector<Value> neighbors = get_neighbors(i, j);
-        Value short_neighbor = neighbors.front();
+        qDebug() << " pasa el get_neighbors";
+        qDebug() << " numero de vecinos: " << std::size(neighbors);
+        Value short_neighbor = neighbors[0];
+        qDebug() << " a esto llega";
         for (auto neighbor : neighbors){
+            qDebug() << " pasa por el for";
             if (neighbor.dist < short_neighbor.dist)
+                qDebug() << " entra en el if";
                 short_neighbor = neighbor;
         }
         qDebug() << "sale de get short neighbor ********************* ";

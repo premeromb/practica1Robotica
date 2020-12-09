@@ -168,8 +168,8 @@ void SpecificWorker::compute() {
         grid.calculate_navigation_grid(x, z);
         grid.draw_graphic_items(scene);
         //desde el target, avanzar con un fuego
-        //auto nextTarget = grid.get_short_neighbor((int)bState.x, (int)bState.z);
-        //target_buffer.put(std::make_tuple(nextTarget.cx, 0, nextTarget.cy));
+        auto nextTarget = grid.get_short_neighbor((int)bState.x, (int)bState.z);
+        target_buffer.put(std::make_tuple(nextTarget.cx, 0, nextTarget.cy));
     }
     if (target_buffer.is_active()) {
        // auto[x, y, z] = target;
