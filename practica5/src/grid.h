@@ -35,7 +35,6 @@ public:
         this->hminGrid = hmin;
         this->widthGrid = width;
         this->tileGrid = tile;
-
     };
 
     struct Value {
@@ -59,7 +58,10 @@ public:
                 elem.paint_cell = scene.addRect(-tile / 2, -tile / 2, tile, tile, QPen(QColor("Darkgreen")),
                                                 QBrush(fondo));
                 elem.paint_cell->setPos(elem.cx, elem.cy);
-                elem.text_cell = scene.addText(" ", font);
+                if (get_dist_world(elem.cx, elem.cy) < 0)
+                    elem.text_cell = scene.addText(" ", font);
+                else
+                    elem.text_cell = scene.addText(QString::number(get_dist_world(elem.cx, elem.cy)), font);
                 elem.text_cell->setPos(elem.cx - tile / 2, elem.cy - tile / 2);
                 // Get the current transform
                 QTransform transform(elem.text_cell->transform());
@@ -81,40 +83,6 @@ public:
             }
         }
     }
-
-    void update_graphic_items(QGraphicsScene &scene) {
-        auto fondo = QColor("LightGreen");
-        fondo.setAlpha(40);
-        QFont font("Bavaria");
-        font.setPointSize(40);
-        font.setWeight(QFont::TypeWriter);
-        for (auto &row : array) {
-            for (auto &elem : row) {
-                //elem.paint_cell = scene.addRect(-tile / 2, -tile / 2, tile, tile, QPen(QColor("Darkgreen")), QBrush(fondo));
-                //elem.paint_cell->setPos(elem.cx, elem.cy);
-                elem.text_cell = scene.addText(QString::number(get_dist_world(elem.cx, elem.cy)), font);
-                elem.text_cell->setPos(elem.cx - tile / 2, elem.cy - tile / 2);
-                // Get the current transform
-                QTransform transform(elem.text_cell->transform());
-                qreal m11 = transform.m11();    // Horizontal scaling
-                qreal m12 = transform.m12();    // Vertical shearing
-                qreal m13 = transform.m13();    // Horizontal Projection
-                qreal m21 = transform.m21();    // Horizontal shearing
-                qreal m22 = transform.m22();    // vertical scaling
-                qreal m23 = transform.m23();    // Vertical Projection
-                qreal m31 = transform.m31();    // Horizontal Position (DX)
-                qreal m32 = transform.m32();    // Vertical Position (DY)
-                qreal m33 = transform.m33();    // Addtional Projection Factor
-                // Vertical flip
-                m22 = -m22;
-                // Write back to the matrix
-                transform.setMatrix(m11, m12, m13, m21, m22, m23, m31, m32, m33);
-                // Set the items transformation
-                elem.text_cell->setTransform(transform);
-            }
-        }
-    }
-
 
 public:
 
@@ -167,12 +135,18 @@ public:
             array[i][j].paint_cell->setBrush(QColor("Yellow"));
     }
 
+    void set_neighbors_dist(std::vector<Value> neighbors, int dist){
+        for (auto neighbor : neighbors){
+            auto[i, j] = world_to_grid(neighbor.cx, neighbor.cy);
+            set_dist(i, j, dist);
+        }
+    }
+
     void reset_cell_distances() {
         for (auto &row : array)
             for (auto &elem : row)
                 elem.dist = -1;
     }
-
 
     std::tuple<int, int> world_to_grid(int i, int j) {
         int k = i / tileGrid + (widthGrid / tileGrid) / 2;
@@ -190,7 +164,7 @@ public:
         return is_in_range(i, j) and not is_occupied(i, j) and not is_distance_updated(i, j);
     }
 
-    std::vector<Value> get_neighbors_and_set_distance(int i, int j, int dist) {
+    std::vector<Value> get_neighbors(int i, int j) {
         std::vector<Value> neighbors;
         qDebug() << "                   On get_neighbors with i: " << i << " j: " << j;
         for (auto &[dk, dl] : operators) {
@@ -198,31 +172,40 @@ public:
             int auxJ = j + dl;
             if (isValidNeighbor(auxI, auxJ)) {
                 qDebug() << "                   Add new neighbor i: " << auxI << " j: " << auxJ;
-                set_dist(auxI, auxJ, dist);
                 neighbors.push_back(array[auxI][auxJ]);
             }
         }
         return neighbors;
     }
 
-    void calculate_navigation_grid(int x, int z) {
+    Value get_short_neighbor(int x, int z) {
+        auto[i, j] = world_to_grid(x, z);
+        std::vector<Value> neighbors = get_neighbors(i, j);
+        Value short_neighbor = neighbors.pop_back();
+        for (auto neighbor : neighbors){
+            if (neighbor.dist < short_neighbor.dist)
+                short_neighbor = neighbors;
+        }
+        return short_neighbor;
+    }
 
+    void calculate_navigation_grid(int x, int z) {
         auto[i, j] = world_to_grid(x, z);
 
         set_target(i, j);
 
         int distance = 1;
-        std::vector<Value> L1 = get_neighbors_and_set_distance(i, j, distance);
+        std::vector<Value> L1 = get_neighbors(i, j);
+        set_neighbors_dist(L1, distance);
         std::vector<Value> L2 = {};
         distance++;
 
         bool end = false;
-
         while (not end) {
-
             for (auto current_cell : L1) {
                 auto[L1_i, L1_j] = world_to_grid(current_cell.cx, current_cell.cy);
-                auto current_cell_neighbors = get_neighbors_and_set_distance(L1_i, L1_j, distance);
+                auto current_cell_neighbors = get_neighbors(L1_i, L1_j);
+                set_neighbors_dist(current_cell_neighbors, distance);
                 for (auto current_neighbor : current_cell_neighbors)
                     L2.push_back(current_neighbor);
             }
@@ -231,7 +214,6 @@ public:
                 end = true;
             L1.swap(L2);
             L2.clear();
-
         }
     }
 

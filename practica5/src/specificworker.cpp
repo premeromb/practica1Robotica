@@ -167,7 +167,7 @@ void SpecificWorker::compute() {
         grid.reset_cell_distances();
 
         grid.calculate_navigation_grid(x, z);
-        grid.update_graphic_items(scene);
+        grid.draw_graphic_items(scene);
         //desde el target, avanzar con un fuego
     }
     if (target_buffer.is_active()) {
