@@ -179,13 +179,15 @@ public:
     }
 
     Value get_short_neighbor(int x, int z) {
+        qDebug() << "get short neighbor ********************* ";
         auto[i, j] = world_to_grid(x, z);
         std::vector<Value> neighbors = get_neighbors(i, j);
-        Value short_neighbor = neighbors.pop_back();
+        Value short_neighbor = neighbors.front();
         for (auto neighbor : neighbors){
             if (neighbor.dist < short_neighbor.dist)
-                short_neighbor = neighbors;
+                short_neighbor = neighbor;
         }
+        qDebug() << "sale de get short neighbor ********************* ";
         return short_neighbor;
     }
 

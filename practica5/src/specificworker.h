@@ -115,7 +115,7 @@ private:
     void dynamic_window_approach(RoboCompGenericBase::TBaseState bState, RoboCompLaser::TLaserData &ldata);
 
     //e5
-    //void calculate_navigation_grid();
+    bool is_on_target(RoboCompGenericBase::TBaseState bState);
 
     void fill_grid_with_obstacles();
 

@@ -165,15 +165,20 @@ void SpecificWorker::compute() {
 
         // calcular la función de navegación
         grid.reset_cell_distances();
-
         grid.calculate_navigation_grid(x, z);
         grid.draw_graphic_items(scene);
         //desde el target, avanzar con un fuego
+        //auto nextTarget = grid.get_short_neighbor((int)bState.x, (int)bState.z);
+        //target_buffer.put(std::make_tuple(nextTarget.cx, 0, nextTarget.cy));
     }
     if (target_buffer.is_active()) {
+       // auto[x, y, z] = target;
+        qDebug() << "entra en esto dddddddddddddddddddddddd";
         //preuntar si ha llegado
-        //buscar el vecino más bajo en el grid
-        //llamar a DWA con ese punto
+        if (is_on_target(bState)) {
+          //  auto nextTarget = grid.get_short_neighbor((int)bState.x, (int)bState.z);
+          //  target_buffer.put(std::make_tuple(nextTarget.cx, 0, nextTarget.cy));
+        }
     }
 
     dynamic_window_approach(bState, ldata);
@@ -182,15 +187,22 @@ void SpecificWorker::compute() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+bool SpecificWorker::is_on_target(RoboCompGenericBase::TBaseState bState){
+    Eigen::Vector2f tr = transformar_targetRW(bState);
+    //distancia que debe recorrer hasta el target
+    auto dist = tr.norm();
+    if (dist < 50)
+        return true;
+    else
+        return false;
+}
+
 
 
 void SpecificWorker::dynamic_window_approach(RoboCompGenericBase::TBaseState bState, RoboCompLaser::TLaserData &ldata) {
     //coordenadas del target del mundo real al mundo del  robot
     Eigen::Vector2f tr = transformar_targetRW(bState);
-
-    //distancia que debe recorrer hasta el target
-    auto dist = tr.norm();
-    if (dist < 50) {
+    if (is_on_target(bState)) {
         differentialrobot_proxy->setSpeedBase(0, 0);
         target_buffer.set_task_finished();
         return;
