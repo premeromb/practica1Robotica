@@ -82,6 +82,13 @@ public:
 
     void RCISMousePicker_setPick(RoboCompRCISMousePicker::Pick myPick);
 
+protected:
+    void resizeEvent(QResizeEvent * event)
+    {
+        graphicsView->fitInView(scene.sceneRect(), Qt::KeepAspectRatio);
+    }
+
+
 
 public slots:
 
